@@ -16,6 +16,13 @@ export const messages = {
   windowStartLabel: "Pencere başlangıcı",
   windowEndLabel: "Pencere bitişi",
   createSuccess: "Gönderi oluşturuldu ve fiyatlandı.",
+  cancelSuccess: "Gönderi iptal edildi.",
+  progress: {
+    PICK_UP: "Paket teslim alındı.",
+    START_TRANSIT: "Yola çıkıldı.",
+    DELIVER: "Teslimat tamamlandı.",
+    FAIL_DELIVERY: "Teslimat sorunu kaydedildi.",
+  } as const,
   paySuccess: "Ödeme kaydedildi (mock). Kurye havuzuna açıldı.",
   payCta: "Öde (mock)",
   acceptSuccess: "İş kabul edildi.",

@@ -421,3 +421,79 @@ export async function listCourierJobs(
 ): Promise<ShipmentRecord[]> {
   return db.listByCourier(courierId);
 }
+
+/** Kurye görev ilerletme olayları — yalnızca atanmış kurye tetikleyebilir. */
+export type CourierProgressEvent = "PICK_UP" | "START_TRANSIT" | "DELIVER" | "FAIL_DELIVERY";
+
+export async function progressShipmentAsCourier(
+  params: {
+    courierId: string;
+    shipmentId: string;
+    event: CourierProgressEvent;
+  },
+  db: ShipmentsDb = prismaShipmentsDb,
+): Promise<Result<ShipmentRecord>> {
+  const shipment = await db.findShipmentById(params.shipmentId);
+  if (!shipment) {
+    return err(new NotFoundError("Shipment not found"));
+  }
+  if (shipment.courierId !== params.courierId) {
+    return err(new ForbiddenError("Not assigned courier"));
+  }
+
+  try {
+    return await db.transaction(async (tx) => {
+      const fresh = await tx.findShipmentById(params.shipmentId);
+      if (!fresh || fresh.courierId !== params.courierId) {
+        return err(new ConflictError("Shipment no longer assigned"));
+      }
+      const nextStatus = transition(fresh.status, params.event);
+      const updated = await tx.updateStatus(fresh.id, nextStatus);
+      await tx.createEvent({
+        shipmentId: fresh.id,
+        fromStatus: fresh.status,
+        toStatus: nextStatus,
+        actorUserId: params.courierId,
+      });
+      return ok(updated);
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "InvalidTransitionError") {
+      return err(new ConflictError(error.message));
+    }
+    throw error;
+  }
+}
+
+export async function cancelShipmentAsSender(
+  params: { senderId: string; shipmentId: string },
+  db: ShipmentsDb = prismaShipmentsDb,
+): Promise<Result<ShipmentRecord>> {
+  const owned = await assertSenderOwnsShipment(params.senderId, params.shipmentId, db);
+  if (!owned.ok) {
+    return owned;
+  }
+
+  try {
+    return await db.transaction(async (tx) => {
+      const fresh = await tx.findShipmentById(params.shipmentId);
+      if (!fresh) {
+        return err(new NotFoundError("Shipment not found"));
+      }
+      const nextStatus = transition(fresh.status, "CANCEL");
+      const cancelled = await tx.updateStatus(fresh.id, nextStatus);
+      await tx.createEvent({
+        shipmentId: fresh.id,
+        fromStatus: fresh.status,
+        toStatus: nextStatus,
+        actorUserId: params.senderId,
+      });
+      return ok(cancelled);
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "InvalidTransitionError") {
+      return err(new ConflictError(error.message));
+    }
+    throw error;
+  }
+}

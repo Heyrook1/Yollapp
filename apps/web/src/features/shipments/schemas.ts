@@ -48,3 +48,16 @@ export const acceptJobSchema = z.object({
 });
 
 export type AcceptJobInput = z.infer<typeof acceptJobSchema>;
+
+export const courierProgressSchema = z.object({
+  shipmentId: z.string().uuid(),
+  event: z.enum(["PICK_UP", "START_TRANSIT", "DELIVER", "FAIL_DELIVERY"]),
+});
+
+export type CourierProgressInput = z.infer<typeof courierProgressSchema>;
+
+export const cancelShipmentSchema = z.object({
+  shipmentId: z.string().uuid(),
+});
+
+export type CancelShipmentInput = z.infer<typeof cancelShipmentSchema>;

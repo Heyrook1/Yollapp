@@ -1,30 +1,48 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { markPaidAction } from "../actions";
-import { messages } from "../messages";
+import { Button } from "@/components/ui/Button";
+import { LockIcon } from "@/components/ui/icons";
 
+/**
+ * Mock ödeme — gerçek ödeme sağlayıcı entegrasyonu MVP sonrası.
+ * Kullanıcıya da bu açıkça söylenir; sahte kart akışı gösterilmez.
+ */
 export function PayButton({ shipmentId }: { shipmentId: string }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="space-y-1">
-      <button
-        type="button"
-        disabled={pending}
+    <div className="space-y-2.5">
+      <p className="flex items-center justify-center gap-1.5 text-xs font-bold text-success-deep">
+        <LockIcon size={13} /> Test ödemesi — gerçek kart çekilmez
+      </p>
+      <Button
+        size="lg"
+        className="w-full"
+        loading={pending}
         onClick={() => {
-          setFeedback(null);
+          setError(null);
           startTransition(async () => {
             const result = await markPaidAction({ shipmentId });
-            setFeedback(result.message);
+            if (result.ok) {
+              router.refresh();
+            } else {
+              setError(result.message);
+            }
           });
         }}
-        className="min-h-11 rounded-md bg-yolla-blue px-4 py-2 text-sm text-white hover:bg-yolla-blue-dark disabled:opacity-60"
       >
-        {pending ? "Ä°ÅŸleniyorâ€¦" : messages.payCta}
-      </button>
-      {feedback ? <p className="text-xs text-ink-secondary">{feedback}</p> : null}
+        Ödemeyi tamamla
+      </Button>
+      {error ? (
+        <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-3 text-sm font-bold text-danger">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

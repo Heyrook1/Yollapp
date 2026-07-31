@@ -7,11 +7,19 @@ import { ZodError } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth";
 import { assertRole } from "@/lib/authorization";
-import { acceptJobSchema, createShipmentSchema, markPaidSchema } from "./schemas";
+import {
+  acceptJobSchema,
+  cancelShipmentSchema,
+  courierProgressSchema,
+  createShipmentSchema,
+  markPaidSchema,
+} from "./schemas";
 import {
   acceptShipmentJob,
+  cancelShipmentAsSender,
   createShipmentAndQuote,
   markShipmentPaid,
+  progressShipmentAsCourier,
 } from "./service";
 import { messages } from "./messages";
 
@@ -135,6 +143,52 @@ export async function acceptJobAction(rawInput: unknown): Promise<ActionResult> 
     revalidatePath("/courier/jobs/mine");
     revalidatePath("/sender/shipments");
     return { ok: true, message: messages.acceptSuccess, shipmentId: result.value.id };
+  } catch (error) {
+    return { ok: false, message: toUserMessage(error) };
+  }
+}
+
+export async function courierProgressAction(rawInput: unknown): Promise<ActionResult> {
+  try {
+    const session = await requireAuth();
+    assertRole(session, AppRole.COURIER);
+    const input = courierProgressSchema.parse(rawInput);
+    const result = await progressShipmentAsCourier({
+      courierId: session.dbUser.id,
+      shipmentId: input.shipmentId,
+      event: input.event,
+    });
+    if (!result.ok) {
+      return { ok: false, message: toUserMessage(result.error) };
+    }
+    revalidatePath("/courier/jobs/mine");
+    revalidatePath("/sender/shipments");
+    revalidatePath(`/sender/shipments/${input.shipmentId}`);
+    return {
+      ok: true,
+      message: messages.progress[input.event],
+      shipmentId: result.value.id,
+    };
+  } catch (error) {
+    return { ok: false, message: toUserMessage(error) };
+  }
+}
+
+export async function cancelShipmentAction(rawInput: unknown): Promise<ActionResult> {
+  try {
+    const session = await requireAuth();
+    const input = cancelShipmentSchema.parse(rawInput);
+    const result = await cancelShipmentAsSender({
+      senderId: session.dbUser.id,
+      shipmentId: input.shipmentId,
+    });
+    if (!result.ok) {
+      return { ok: false, message: toUserMessage(result.error) };
+    }
+    revalidatePath("/sender/shipments");
+    revalidatePath(`/sender/shipments/${input.shipmentId}`);
+    revalidatePath("/courier/jobs");
+    return { ok: true, message: messages.cancelSuccess, shipmentId: result.value.id };
   } catch (error) {
     return { ok: false, message: toUserMessage(error) };
   }
