@@ -209,12 +209,17 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
           </label>
           <input
             id="rphone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             required
+            placeholder="0533 123 45 67"
             className="w-full rounded-md border border-border bg-white px-3 py-2"
             value={recipientPhone}
             disabled={disabled}
             onChange={(e) => setRecipientPhone(e.target.value)}
           />
+          <p className="text-xs text-ink-secondary">{messages.recipientPhoneHint}</p>
         </div>
       </div>
 

@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+/** Keep digits only; strip spaces/dashes for validation & storage. */
+export function normalizePhone(raw: string): string {
+  return raw.replace(/\D/g, "");
+}
+
 export const createShipmentSchema = z
   .object({
     zoneId: z.string().uuid(),
@@ -8,13 +13,19 @@ export const createShipmentSchema = z
     pickupAddress: z.string().trim().min(5).max(300),
     dropoffAddress: z.string().trim().min(5).max(300),
     recipientName: z.string().trim().min(2).max(120),
-    recipientPhone: z.string().trim().min(7).max(20),
+    recipientPhone: z
+      .string()
+      .trim()
+      .transform(normalizePhone)
+      .refine((digits) => digits.length >= 10 && digits.length <= 15, {
+        message: "phone_invalid",
+      }),
     notes: z.string().trim().max(500).optional(),
     windowStartsAt: z.string().datetime(),
     windowEndsAt: z.string().datetime(),
   })
   .refine((data) => new Date(data.windowEndsAt) > new Date(data.windowStartsAt), {
-    message: "Window end must be after start",
+    message: "window_invalid",
     path: ["windowEndsAt"],
   });
 

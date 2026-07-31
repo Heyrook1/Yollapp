@@ -3,6 +3,7 @@
 import { DomainError } from "@yolla/core";
 import { formatTry } from "@yolla/core";
 import { AppRole } from "@yolla/db";
+import { ZodError } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth";
 import { assertRole } from "@/lib/authorization";
@@ -18,7 +19,33 @@ export type ActionResult =
   | { ok: true; message: string; shipmentId?: string; amountLabel?: string }
   | { ok: false; message: string };
 
+function zodToUserMessage(error: ZodError): string {
+  const path = error.issues[0]?.path[0];
+  switch (path) {
+    case "recipientPhone":
+      return messages.validation.recipientPhone;
+    case "recipientName":
+      return messages.validation.recipientName;
+    case "pickupAddress":
+      return messages.validation.pickupAddress;
+    case "dropoffAddress":
+      return messages.validation.dropoffAddress;
+    case "windowEndsAt":
+    case "windowStartsAt":
+      return messages.validation.window;
+    case "zoneId":
+      return messages.validation.zone;
+    case "sizeClassId":
+      return messages.validation.size;
+    default:
+      return messages.validation.generic;
+  }
+}
+
 function toUserMessage(error: unknown): string {
+  if (error instanceof ZodError) {
+    return zodToUserMessage(error);
+  }
   if (error instanceof DomainError) {
     switch (error.code) {
       case "UNAUTHORIZED":
@@ -33,7 +60,10 @@ function toUserMessage(error: unknown): string {
         return messages.genericError;
     }
   }
-  console.error("shipment action error", error instanceof Error ? error.message : "unknown");
+  console.error(
+    "shipment action error",
+    error instanceof Error ? error.message : "unknown",
+  );
   return messages.genericError;
 }
 
