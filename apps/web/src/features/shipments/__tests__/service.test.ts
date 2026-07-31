@@ -67,6 +67,15 @@ function createMemoryDeps() {
       shipments.set(id, updated);
       return updated;
     },
+    assignCourierIfAvailable: async (id, courierId, status) => {
+      const existing = shipments.get(id);
+      // Gerçek DB'deki koşullu UPDATE'i taklit eder.
+      if (!existing || existing.courierId !== null || existing.status !== "PAID") {
+        return 0;
+      }
+      shipments.set(id, { ...existing, courierId, status, updatedAt: new Date() });
+      return 1;
+    },
     upsertQuote: async (data) => {
       const record: PriceQuoteRecord = {
         id: `quote-${quotes.size + 1}`,
@@ -208,6 +217,48 @@ describe("acceptShipmentJob", () => {
     if (!result.ok) {
       expect(result.error.code).toBe("CONFLICT");
     }
+  });
+});
+
+describe("acceptShipmentJob — eşzamanlılık ve çıkar çatışması", () => {
+  it("aynı gönderiyi eşzamanlı kabul eden iki kuryeden yalnızca biri kazanır", async () => {
+    const deps = createMemoryDeps();
+    const id = await quotedShipment(deps);
+    await markShipmentPaid({ senderId: "sender-1", shipmentId: id }, deps.shipmentsDb);
+    deps.approvedCouriers.add("courier-2");
+
+    const [first, second] = await Promise.all([
+      acceptShipmentJob({ courierId: "courier-1", shipmentId: id }, deps.shipmentsDb),
+      acceptShipmentJob({ courierId: "courier-2", shipmentId: id }, deps.shipmentsDb),
+    ]);
+
+    const succeeded = [first, second].filter((r) => r.ok);
+    const failed = [first, second].filter((r) => !r.ok);
+    expect(succeeded).toHaveLength(1);
+    expect(failed).toHaveLength(1);
+
+    // Gönderi tek bir kuryeye atanmış olmalı.
+    const finalShipment = deps.shipments.get(id)!;
+    expect(["courier-1", "courier-2"]).toContain(finalShipment.courierId);
+    expect(finalShipment.status).toBe("MATCHED");
+  });
+
+  it("kurye kendi oluşturduğu gönderiyi kabul edemez", async () => {
+    const deps = createMemoryDeps();
+    // Gönderici aynı zamanda onaylı kurye.
+    deps.approvedCouriers.add("sender-1");
+    const id = await quotedShipment(deps);
+    await markShipmentPaid({ senderId: "sender-1", shipmentId: id }, deps.shipmentsDb);
+
+    const result = await acceptShipmentJob(
+      { courierId: "sender-1", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+    expect(deps.shipments.get(id)!.courierId).toBeNull();
   });
 });
 

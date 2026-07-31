@@ -2,11 +2,22 @@
 
 import { DomainError } from "@yolla/core";
 import { formatTry } from "@yolla/core";
-import { AppRole } from "@yolla/db";
 import { ZodError } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/lib/auth";
-import { assertRole } from "@/lib/authorization";
+import { requireAuth, type SessionUser } from "@/lib/auth";
+import { assertCan, type AccountState } from "@/lib/authz";
+import { assertFeatureEnabled } from "@/lib/flags";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { prisma } from "@yolla/db";
+
+/** Yetki kararı için kurye durumunu da içeren hesap görünümü. */
+async function accountState(session: SessionUser): Promise<AccountState> {
+  const profile = await prisma.courierProfile.findUnique({
+    where: { userId: session.dbUser.id },
+    select: { status: true },
+  });
+  return { user: session.dbUser, courierStatus: profile?.status ?? null };
+}
 import {
   acceptJobSchema,
   cancelShipmentSchema,
@@ -77,8 +88,17 @@ function toUserMessage(error: unknown): string {
 
 export async function createShipmentAction(rawInput: unknown): Promise<ActionResult> {
   try {
+    // 1. kimlik → 2. kill switch → 3. hız sınırı → 4. Zod → 5. yetki → 6. iş mantığı
     const session = await requireAuth();
+    await assertFeatureEnabled("shipment_creation");
+
+    const limit = await checkRateLimit("quote", session.dbUser.id);
+    if (!limit.allowed) {
+      return { ok: false, message: messages.rateLimited };
+    }
+
     const input = createShipmentSchema.parse(rawInput);
+    assertCan(await accountState(session), "shipment:create");
 
     if (rawInput && typeof rawInput === "object" && "price" in rawInput) {
       console.error("ignored client-supplied price on createShipment", {
@@ -130,8 +150,10 @@ export async function markPaidAction(rawInput: unknown): Promise<ActionResult> {
 export async function acceptJobAction(rawInput: unknown): Promise<ActionResult> {
   try {
     const session = await requireAuth();
-    assertRole(session, AppRole.COURIER);
+    await assertFeatureEnabled("courier_matching");
     const input = acceptJobSchema.parse(rawInput);
+    // Onaylı olmayan / askıya alınmış kurye iş kabul edemez.
+    assertCan(await accountState(session), "courier:accept_job");
     const result = await acceptShipmentJob({
       courierId: session.dbUser.id,
       shipmentId: input.shipmentId,
@@ -151,8 +173,8 @@ export async function acceptJobAction(rawInput: unknown): Promise<ActionResult> 
 export async function courierProgressAction(rawInput: unknown): Promise<ActionResult> {
   try {
     const session = await requireAuth();
-    assertRole(session, AppRole.COURIER);
     const input = courierProgressSchema.parse(rawInput);
+    assertCan(await accountState(session), "courier:progress_job");
     const result = await progressShipmentAsCourier({
       courierId: session.dbUser.id,
       shipmentId: input.shipmentId,
@@ -178,6 +200,7 @@ export async function cancelShipmentAction(rawInput: unknown): Promise<ActionRes
   try {
     const session = await requireAuth();
     const input = cancelShipmentSchema.parse(rawInput);
+    assertCan(await accountState(session), "shipment:cancel");
     const result = await cancelShipmentAsSender({
       senderId: session.dbUser.id,
       shipmentId: input.shipmentId,

@@ -4,26 +4,36 @@ import type { CourierProfileRecord } from "../service";
 
 const labelByStatus: Record<CourierStatus, string> = {
   PENDING: messages.statusPending,
+  UNDER_REVIEW: messages.statusUnderReview,
   APPROVED: messages.statusApproved,
   REJECTED: messages.statusRejected,
+  SUSPENDED: messages.statusSuspended,
+  DISABLED: messages.statusDisabled,
 };
 
 const classByStatus: Record<CourierStatus, string> = {
-  PENDING: "bg-amber-100 text-amber-900",
-  APPROVED: "bg-yolla-blue-soft text-ink",
-  REJECTED: "bg-red-100 text-red-900",
+  PENDING: "bg-warning-soft text-warning-deep",
+  UNDER_REVIEW: "bg-info-soft text-info",
+  APPROVED: "bg-success-soft text-success-deep",
+  REJECTED: "bg-danger-soft text-danger",
+  SUSPENDED: "bg-danger-soft text-danger",
+  DISABLED: "bg-fill text-ink-secondary",
 };
 
 export function StatusBadge({ profile }: { profile: CourierProfileRecord }) {
+  const blocked =
+    profile.status === CourierStatus.REJECTED ||
+    profile.status === CourierStatus.SUSPENDED;
+
   return (
     <div className="space-y-2">
       <span
-        className={`inline-block rounded-md px-2 py-1 text-sm font-medium ${classByStatus[profile.status]}`}
+        className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-extrabold ${classByStatus[profile.status]}`}
       >
         {labelByStatus[profile.status]}
       </span>
-      {profile.status === CourierStatus.REJECTED && profile.rejectionReason ? (
-        <p className="text-sm text-red-800">{profile.rejectionReason}</p>
+      {blocked && profile.rejectionReason ? (
+        <p className="text-sm font-semibold text-danger">{profile.rejectionReason}</p>
       ) : null}
     </div>
   );

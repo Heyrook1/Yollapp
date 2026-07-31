@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "release/**", "design/**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Validate Prisma schema
+        run: pnpm --filter @yolla/db exec prisma validate
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/ci
+          DIRECT_URL: postgresql://user:pass@localhost:5432/ci
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Production build
+        run: pnpm --filter @yolla/web build
+        env:
+          # Build-time placeholder'lar — gerçek sırlar CI'da kullanılmaz.
+          DATABASE_URL: postgresql://user:pass@localhost:5432/ci
+          DIRECT_URL: postgresql://user:pass@localhost:5432/ci
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-for-build-only
+
+  security:
+    name: Security checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Dependency vulnerability audit
+        # Pilot aşamasında yüksek/kritik açıklar build'i durdurur.
+        run: pnpm audit --audit-level high
+
+      - name: Secret scan
+        run: |
+          echo "Committed .env dosyası taranıyor..."
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::.env dosyası repoya commit edilmiş"
+            exit 1
+          fi
+          echo "Olası sabit kodlanmış sırlar taranıyor..."
+          if git grep -nEI \
+            -e 'eyJhbGciOi[A-Za-z0-9_-]{20,}' \
+            -e 'sk_live_[A-Za-z0-9]{16,}' \
+            -e 'service_role.*eyJ' \
+            -- ':!*.md' ':!pnpm-lock.yaml' ':!.github/workflows/*'; then
+            echo "::error::Kaynak kodda olası sır bulundu"
+            exit 1
+          fi
+          echo "Sır taraması temiz."
+
+      - name: Verify RLS on new tables
+        # Yeni tablo RLS policy'siz merge edilemez (CLAUDE.md §6.1).
+        run: |
+          MIGRATIONS=$(ls packages/db/prisma/migrations)
+          for dir in $MIGRATIONS; do
+            FILE="packages/db/prisma/migrations/$dir/migration.sql"
+            [ -f "$FILE" ] || continue
+            if grep -q "CREATE TABLE" "$FILE" && ! grep -q "ENABLE ROW LEVEL SECURITY" "$FILE"; then
+              echo "::error::$dir tablo oluşturuyor ama RLS etkinleştirmiyor"
+              exit 1
+            fi
+          done
+          echo "Tüm migration'lar RLS kuralına uyuyor."

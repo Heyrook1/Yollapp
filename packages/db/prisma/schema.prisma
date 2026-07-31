@@ -16,8 +16,11 @@ enum AppRole {
 
 enum CourierStatus {
   PENDING
+  UNDER_REVIEW
   APPROVED
   REJECTED
+  SUSPENDED
+  DISABLED
 }
 
 enum VehicleType {
@@ -47,10 +50,16 @@ model User {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  courierProfile   CourierProfile?
-  shipmentsSent    Shipment[]      @relation("ShipmentSender")
-  shipmentsCourier Shipment[]      @relation("ShipmentCourier")
-  shipmentEvents   ShipmentEvent[]
+  courierProfile    CourierProfile?
+  shipmentsSent     Shipment[]      @relation("ShipmentSender")
+  shipmentsCourier  Shipment[]      @relation("ShipmentCourier")
+  shipmentEvents    ShipmentEvent[]
+  wallet            Wallet?
+  payouts           Payout[]
+  incidentsReported Incident[]      @relation("IncidentReporter")
+  incidentsAssigned Incident[]      @relation("IncidentAssignee")
+  auditLogs         AuditLog[]
+  consents          Consent[]
 
   @@map("users")
 }
@@ -113,28 +122,31 @@ model SizeClass {
 }
 
 model Shipment {
-  id              String         @id @default(uuid()) @db.Uuid
-  senderId        String         @map("sender_id") @db.Uuid
-  courierId       String?        @map("courier_id") @db.Uuid
-  status          ShipmentStatus @default(DRAFT)
-  zoneId          String         @map("zone_id") @db.Uuid
-  sizeClassId     String         @map("size_class_id") @db.Uuid
-  isExpress       Boolean        @default(false) @map("is_express")
-  pickupAddress   String         @map("pickup_address")
-  dropoffAddress  String         @map("dropoff_address")
-  recipientName   String         @map("recipient_name")
-  recipientPhone  String         @map("recipient_phone")
-  notes           String?
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+  id             String         @id @default(uuid()) @db.Uuid
+  senderId       String         @map("sender_id") @db.Uuid
+  courierId      String?        @map("courier_id") @db.Uuid
+  status         ShipmentStatus @default(DRAFT)
+  zoneId         String         @map("zone_id") @db.Uuid
+  sizeClassId    String         @map("size_class_id") @db.Uuid
+  isExpress      Boolean        @default(false) @map("is_express")
+  pickupAddress  String         @map("pickup_address")
+  dropoffAddress String         @map("dropoff_address")
+  recipientName  String         @map("recipient_name")
+  recipientPhone String         @map("recipient_phone")
+  notes          String?
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
-  sender          User             @relation("ShipmentSender", fields: [senderId], references: [id])
-  courier         User?            @relation("ShipmentCourier", fields: [courierId], references: [id])
-  zone            Zone             @relation(fields: [zoneId], references: [id])
-  sizeClass       SizeClass        @relation(fields: [sizeClassId], references: [id])
-  deliveryWindow  DeliveryWindow?
-  priceQuote      PriceQuote?
-  events          ShipmentEvent[]
+  sender         User            @relation("ShipmentSender", fields: [senderId], references: [id])
+  courier        User?           @relation("ShipmentCourier", fields: [courierId], references: [id])
+  zone           Zone            @relation(fields: [zoneId], references: [id])
+  sizeClass      SizeClass       @relation(fields: [sizeClassId], references: [id])
+  deliveryWindow DeliveryWindow?
+  priceQuote     PriceQuote?
+  events         ShipmentEvent[]
+  trackingTokens TrackingToken[]
+  ledgerEntries  LedgerEntry[]
+  incidents      Incident[]
 
   @@index([senderId])
   @@index([courierId])
@@ -143,14 +155,14 @@ model Shipment {
 }
 
 model DeliveryWindow {
-  id          String   @id @default(uuid()) @db.Uuid
-  shipmentId  String   @unique @map("shipment_id") @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
+  shipmentId String   @unique @map("shipment_id") @db.Uuid
   /// Inclusive window start (UTC). Display in Europe/Nicosia.
-  startsAt    DateTime @map("starts_at")
+  startsAt   DateTime @map("starts_at")
   /// Exclusive window end (UTC).
-  endsAt      DateTime @map("ends_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  endsAt     DateTime @map("ends_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
 
@@ -174,16 +186,244 @@ model PriceQuote {
 }
 
 model ShipmentEvent {
-  id           String          @id @default(uuid()) @db.Uuid
-  shipmentId   String          @map("shipment_id") @db.Uuid
-  fromStatus   ShipmentStatus? @map("from_status")
-  toStatus     ShipmentStatus  @map("to_status")
-  actorUserId  String?         @map("actor_user_id") @db.Uuid
-  createdAt    DateTime        @default(now()) @map("created_at")
+  id          String          @id @default(uuid()) @db.Uuid
+  shipmentId  String          @map("shipment_id") @db.Uuid
+  fromStatus  ShipmentStatus? @map("from_status")
+  toStatus    ShipmentStatus  @map("to_status")
+  actorUserId String?         @map("actor_user_id") @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at")
 
   shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   actor    User?    @relation(fields: [actorUserId], references: [id])
 
   @@index([shipmentId, createdAt])
   @@map("shipment_events")
+}
+
+/// Paylaşılabilir takip erişimi. Token en az 128-bit rastgele, iptal edilebilir ve süreli.
+/// Tahmin edilebilir/sıralı ID kullanılmaz (CLAUDE.md §6.4).
+model TrackingToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  shipmentId String    @map("shipment_id") @db.Uuid
+  /// SHA-256 hash of the token. Ham token yalnızca oluşturulurken döner, DB'de saklanmaz.
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId])
+  @@map("tracking_tokens")
+}
+
+enum LedgerEntryType {
+  DELIVERY_EARNING
+  PLATFORM_COMMISSION
+  BONUS
+  TIP
+  ADJUSTMENT
+  REFUND_DEDUCTION
+  PAYOUT
+  PAYOUT_REVERSAL
+}
+
+/// Kazanç yaşam döngüsü. Tutar/tip/referans DEĞİŞMEZ; yalnızca bu durum ilerler.
+enum LedgerEntryStatus {
+  PENDING
+  AVAILABLE
+  PAID
+}
+
+/// Kurye bakiye hesabı. Bakiye BURADA KOLON DEĞİLDİR —
+/// bakiye = SUM(LedgerEntry.amountMinor) (CLAUDE.md §5.2).
+model Wallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries LedgerEntry[]
+
+  @@map("wallets")
+}
+
+/// Değiştirilemez para hareketi satırı. Tutar integer kuruş, işaretli
+/// (pozitif = cüzdana alacak, negatif = borç). amountMinor = 0 DB seviyesinde yasak.
+model LedgerEntry {
+  id             String            @id @default(uuid()) @db.Uuid
+  walletId       String            @map("wallet_id") @db.Uuid
+  type           LedgerEntryType
+  status         LedgerEntryStatus @default(PENDING)
+  amountMinor    Int               @map("amount_minor")
+  shipmentId     String?           @map("shipment_id") @db.Uuid
+  payoutId       String?           @map("payout_id") @db.Uuid
+  /// Aynı olayın iki kez yazılmasını engeller (çift ödeme koruması).
+  idempotencyKey String            @unique @map("idempotency_key")
+  description    String?
+  createdAt      DateTime          @default(now()) @map("created_at")
+  availableAt    DateTime?         @map("available_at")
+  paidAt         DateTime?         @map("paid_at")
+
+  wallet   Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  shipment Shipment? @relation(fields: [shipmentId], references: [id])
+  payout   Payout?   @relation(fields: [payoutId], references: [id])
+
+  @@index([walletId, status])
+  @@index([shipmentId])
+  @@map("ledger_entries")
+}
+
+enum PayoutStatus {
+  REQUESTED
+  PROCESSING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+/// Kuryenin parayı bankaya çekmesi. Idempotent — aynı istek iki kez ödeme çıkarmaz.
+model Payout {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  amountMinor    Int          @map("amount_minor")
+  status         PayoutStatus @default(REQUESTED)
+  /// Sağlayıcı tarafındaki benzersiz referans.
+  reference      String       @unique
+  idempotencyKey String       @unique @map("idempotency_key")
+  destination    String?
+  failureReason  String?      @map("failure_reason")
+  requestedAt    DateTime     @default(now()) @map("requested_at")
+  processedAt    DateTime?    @map("processed_at")
+
+  user    User          @relation(fields: [userId], references: [id])
+  entries LedgerEntry[]
+
+  @@index([userId, status])
+  @@map("payouts")
+}
+
+enum IncidentType {
+  RECIPIENT_UNAVAILABLE
+  WRONG_ADDRESS
+  PACKAGE_DAMAGED
+  PACKAGE_REFUSED
+  COURIER_DELAYED
+  CANNOT_REACH_SENDER
+  CANNOT_REACH_RECIPIENT
+  SAFETY_CONCERN
+  PAYMENT_ISSUE
+  OTHER
+}
+
+enum IncidentStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model Incident {
+  id           String         @id @default(uuid()) @db.Uuid
+  shipmentId   String         @map("shipment_id") @db.Uuid
+  reporterId   String         @map("reporter_id") @db.Uuid
+  type         IncidentType
+  status       IncidentStatus @default(OPEN)
+  description  String
+  resolution   String?
+  assignedToId String?        @map("assigned_to_id") @db.Uuid
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  resolvedAt   DateTime?      @map("resolved_at")
+
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  reporter   User     @relation("IncidentReporter", fields: [reporterId], references: [id])
+  assignedTo User?    @relation("IncidentAssignee", fields: [assignedToId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([shipmentId])
+  @@map("incidents")
+}
+
+/// Yetki gerektiren ve geri alınamaz işlemlerin denetim kaydı.
+/// Kişisel veri YAZILMAZ — yalnızca kayıt kimlikleri (CLAUDE.md §6.6).
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  actorUserId  String?  @map("actor_user_id") @db.Uuid
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  reason       String?
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorUserId], references: [id])
+
+  @@index([actorUserId, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  LOCATION_USAGE
+  MARKETING_NOTIFICATIONS
+  COURIER_DOCUMENT_PROCESSING
+}
+
+model Consent {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @map("user_id") @db.Uuid
+  type      ConsentType
+  version   String
+  granted   Boolean
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, version])
+  @@index([userId])
+  @@map("consents")
+}
+
+/// Sunucu tarafında zorlanan hız sınırı sayacı. Serverless'ta bellek içi sayaç
+/// örnekler arasında paylaşılmadığı için kalıcı depolama kullanılır (CLAUDE.md §6.7).
+model RateLimitCounter {
+  id          String   @id @default(uuid()) @db.Uuid
+  /// "<bucket>:<identifier>" — ör. "auth:203.0.113.4"
+  key         String   @unique
+  count       Int      @default(0)
+  windowStart DateTime @map("window_start")
+  expiresAt   DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("rate_limit_counters")
+}
+
+/// Operasyonel kill switch / pilot kontrolü. SUNUCUDA zorlanır — client gizlemesi yetki değildir.
+model FeatureFlag {
+  id          String   @id
+  enabled     Boolean  @default(true)
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedById String?  @map("updated_by_id") @db.Uuid
+
+  @@map("feature_flags")
+}
+
+/// Tekrarlanan istekleri (gönderi oluşturma, ödeme başlatma) güvenli kılar.
+model IdempotencyKey {
+  id         String   @id @default(uuid()) @db.Uuid
+  key        String   @unique
+  userId     String?  @map("user_id") @db.Uuid
+  operation  String
+  resourceId String?  @map("resource_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  expiresAt  DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("idempotency_keys")
 }

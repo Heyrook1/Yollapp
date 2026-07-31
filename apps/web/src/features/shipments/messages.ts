@@ -37,6 +37,7 @@ export const messages = {
   notFound: "Gönderi bulunamadı.",
   genericError: "Bir hata oluştu. Lütfen tekrar deneyin.",
   conflict: "Bu işlem şu an yapılamıyor.",
+  rateLimited: "Çok fazla istek gönderdiniz. Lütfen biraz bekleyip tekrar deneyin.",
   validation: {
     recipientPhone: "Geçerli bir telefon girin (en az 10 rakam).",
     recipientName: "Alıcı adı en az 2 karakter olmalı.",

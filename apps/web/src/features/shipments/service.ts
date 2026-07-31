@@ -85,6 +85,15 @@ export type ShipmentsDb = {
     courierId: string,
     status: ShipmentStatus,
   ) => Promise<ShipmentRecord>;
+  /**
+   * Atomik atama: yalnızca gönderi hâlâ PAID ve kuryesizse yazar.
+   * Eşzamanlı iki kabulde ikincisi 0 satır günceller — çift atama imkânsız.
+   */
+  assignCourierIfAvailable: (
+    id: string,
+    courierId: string,
+    status: ShipmentStatus,
+  ) => Promise<number>;
   upsertQuote: (data: {
     shipmentId: string;
     amountMinor: number;
@@ -116,6 +125,7 @@ function createShipmentsDb(
       }) => Promise<ShipmentRow | null>;
       findMany: (args: Prisma.ShipmentFindManyArgs) => Promise<ShipmentRow[]>;
       update: (args: Prisma.ShipmentUpdateArgs) => Promise<ShipmentRow>;
+      updateMany: (args: Prisma.ShipmentUpdateManyArgs) => Promise<{ count: number }>;
     };
     priceQuote: {
       upsert: (args: Prisma.PriceQuoteUpsertArgs) => Promise<PriceQuoteRecord>;
@@ -201,6 +211,14 @@ function createShipmentsDb(
         data: { courierId, status },
       });
       return toRecord(row);
+    },
+    assignCourierIfAvailable: async (id, courierId, status) => {
+      // Koşul yazımın parçası: eşzamanlı ikinci kabul 0 satır günceller.
+      const result = await client.shipment.updateMany({
+        where: { id, status: "PAID", courierId: null },
+        data: { courierId, status },
+      });
+      return result.count;
     },
     upsertQuote: async (data) =>
       client.priceQuote.upsert({
@@ -359,21 +377,32 @@ export async function acceptShipmentJob(
     return err(new ConflictError("Shipment already matched"));
   }
 
+  // Kurye kendi gönderisini taşıyamaz (çıkar çatışması / komisyon manipülasyonu).
+  if (shipment.senderId === params.courierId) {
+    return err(new ForbiddenError("Kendi gönderinizi kurye olarak alamazsınız."));
+  }
+
   try {
     const nextStatus = transition(shipment.status, "MATCH");
     return await db.transaction(async (tx) => {
-      // Re-read inside transaction to reduce race on double-accept.
-      const fresh = await tx.findShipmentById(params.shipmentId);
-      if (!fresh) {
-        return err(new NotFoundError("Shipment not found"));
-      }
-      if (fresh.courierId || fresh.status !== "PAID") {
+      // Atomik koşullu yazım: "önce oku sonra yaz" yarışı burada kapanır.
+      // Eşzamanlı ikinci kabul 0 satır günceller ve CONFLICT alır.
+      const updated = await tx.assignCourierIfAvailable(
+        params.shipmentId,
+        params.courierId,
+        nextStatus,
+      );
+      if (updated === 0) {
         return err(new ConflictError("Shipment no longer available"));
       }
-      const matched = await tx.assignCourier(fresh.id, params.courierId, nextStatus);
+
+      const matched = await tx.findShipmentById(params.shipmentId);
+      if (!matched) {
+        return err(new NotFoundError("Shipment not found"));
+      }
       await tx.createEvent({
-        shipmentId: fresh.id,
-        fromStatus: fresh.status,
+        shipmentId: matched.id,
+        fromStatus: "PAID",
         toStatus: nextStatus,
         actorUserId: params.courierId,
       });
