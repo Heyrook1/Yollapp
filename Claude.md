@@ -33,7 +33,7 @@
 - **Framework:** Next.js (App Router) + React + TypeScript (strict mode)
 - **DB/Auth/Storage:** Supabase (Postgres + Auth + Storage) — RLS her tabloda AÇIK
 - **ORM:** Prisma
-- **Deploy:** Vercel
+- **Deploy:** Netlify (`@netlify/plugin-nextjs`) — bkz. ADR 0002
 - **Paket yöneticisi:** pnpm (workspace/monorepo)
 - **Validasyon:** Zod — her giriş noktasında
 - **Stil:** Tailwind CSS

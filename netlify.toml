@@ -1,0 +1,25 @@
+# Netlify deploy config — pnpm monorepo, Next.js App Router (apps/web).
+# Prisma Client build script'leri pnpm tarafından engellendiği için `prisma generate`
+# build komutunda açıkça çalıştırılır; aksi halde @prisma/client tipleri üretilmez.
+
+[build]
+  command = "pnpm db:generate && pnpm --filter @yolla/web build"
+  publish = "apps/web/.next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Prisma engine indirmelerini ve pnpm strict linking sorunlarını önler
+  PRISMA_SKIP_POSTINSTALL_GENERATE = "true"
+  NPM_FLAGS = "--version"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Güvenlik başlıkları — uygulama gerçek Supabase'e bağlı olduğu için
+# indekslenmesini istemiyoruz (demo dağıtımı).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
