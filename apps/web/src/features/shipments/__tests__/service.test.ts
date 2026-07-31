@@ -3,8 +3,10 @@ import type { PricingDb } from "@/features/pricing/service";
 import {
   acceptShipmentJob,
   assertSenderOwnsShipment,
+  cancelShipmentAsSender,
   createShipmentAndQuote,
   markShipmentPaid,
+  progressShipmentAsCourier,
   type ShipmentsDb,
   type ShipmentRecord,
   type PriceQuoteRecord,
@@ -200,6 +202,132 @@ describe("acceptShipmentJob", () => {
     deps.approvedCouriers.add("courier-2");
     const result = await acceptShipmentJob(
       { courierId: "courier-2", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("CONFLICT");
+    }
+  });
+});
+
+async function matchedShipment(deps: ReturnType<typeof createMemoryDeps>) {
+  const id = await quotedShipment(deps);
+  await markShipmentPaid({ senderId: "sender-1", shipmentId: id }, deps.shipmentsDb);
+  await acceptShipmentJob({ courierId: "courier-1", shipmentId: id }, deps.shipmentsDb);
+  return id;
+}
+
+describe("progressShipmentAsCourier", () => {
+  it("atanmış kurye PICK_UP → START_TRANSIT → DELIVER akışını tamamlar ve her adım loglanır", async () => {
+    const deps = createMemoryDeps();
+    const id = await matchedShipment(deps);
+
+    for (const [event, expected] of [
+      ["PICK_UP", "PICKED_UP"],
+      ["START_TRANSIT", "IN_TRANSIT"],
+      ["DELIVER", "DELIVERED"],
+    ] as const) {
+      const result = await progressShipmentAsCourier(
+        { courierId: "courier-1", shipmentId: id, event },
+        deps.shipmentsDb,
+      );
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.status).toBe(expected);
+      }
+    }
+
+    const toStatuses = deps.events.map((e) => e.toStatus);
+    expect(toStatuses).toContain("PICKED_UP");
+    expect(toStatuses).toContain("IN_TRANSIT");
+    expect(toStatuses).toContain("DELIVERED");
+  });
+
+  it("atanmamış kurye durumu ilerletemez", async () => {
+    const deps = createMemoryDeps();
+    const id = await matchedShipment(deps);
+    const result = await progressShipmentAsCourier(
+      { courierId: "courier-intruder", shipmentId: id, event: "PICK_UP" },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+  });
+
+  it("geçersiz geçiş (MATCHED + DELIVER) CONFLICT döner", async () => {
+    const deps = createMemoryDeps();
+    const id = await matchedShipment(deps);
+    const result = await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "DELIVER" },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("CONFLICT");
+    }
+  });
+
+  it("IN_TRANSIT'te FAIL_DELIVERY teslimat sorununa geçirir", async () => {
+    const deps = createMemoryDeps();
+    const id = await matchedShipment(deps);
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "PICK_UP" },
+      deps.shipmentsDb,
+    );
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "START_TRANSIT" },
+      deps.shipmentsDb,
+    );
+    const result = await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "FAIL_DELIVERY" },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.status).toBe("FAILED_DELIVERY");
+    }
+  });
+});
+
+describe("cancelShipmentAsSender", () => {
+  it("sahibi QUOTED gönderiyi iptal edebilir", async () => {
+    const deps = createMemoryDeps();
+    const id = await quotedShipment(deps);
+    const result = await cancelShipmentAsSender(
+      { senderId: "sender-1", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.status).toBe("CANCELLED");
+    }
+  });
+
+  it("başkasının gönderisi iptal edilemez", async () => {
+    const deps = createMemoryDeps();
+    const id = await quotedShipment(deps);
+    const result = await cancelShipmentAsSender(
+      { senderId: "sender-2", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+  });
+
+  it("PICKED_UP sonrası iptal CONFLICT döner", async () => {
+    const deps = createMemoryDeps();
+    const id = await matchedShipment(deps);
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "PICK_UP" },
+      deps.shipmentsDb,
+    );
+    const result = await cancelShipmentAsSender(
+      { senderId: "sender-1", shipmentId: id },
       deps.shipmentsDb,
     );
     expect(result.ok).toBe(false);

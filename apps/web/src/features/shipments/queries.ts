@@ -264,6 +264,50 @@ export async function querySenderWallet() {
   return { totalLabel: formatTry(totalMinor), count: entries.length, entries };
 }
 
+const ADMIN_STATUS_FILTERS = [
+  "QUOTED",
+  "PAID",
+  "MATCHED",
+  "PICKED_UP",
+  "IN_TRANSIT",
+  "DELIVERED",
+  "FAILED_DELIVERY",
+  "CANCELLED",
+] as const;
+
+export type AdminStatusFilter = (typeof ADMIN_STATUS_FILTERS)[number];
+
+export function parseAdminStatusFilter(raw: string | undefined): AdminStatusFilter | null {
+  return ADMIN_STATUS_FILTERS.includes(raw as AdminStatusFilter)
+    ? (raw as AdminStatusFilter)
+    : null;
+}
+
+/** Admin gönderi listesi — durum filtresiyle. */
+export async function queryAdminShipments(status: AdminStatusFilter | null) {
+  const session = await requireAuth();
+  assertRole(session, AppRole.ADMIN);
+
+  const shipments = await prisma.shipment.findMany({
+    where: status ? { status } : undefined,
+    orderBy: { updatedAt: "desc" },
+    take: 50,
+    include: { priceQuote: true, zone: true, sizeClass: true },
+  });
+
+  return shipments.map((s) => ({
+    id: s.id,
+    code: s.id.slice(0, 8).toUpperCase(),
+    status: s.status,
+    zoneName: s.zone.name,
+    sizeName: s.sizeClass.name,
+    isExpress: s.isExpress,
+    recipientName: s.recipientName,
+    amountLabel: s.priceQuote ? formatTry(s.priceQuote.amountMinor) : "—",
+    updatedLabel: nicosiaDateTime.format(s.updatedAt),
+  }));
+}
+
 /** Admin operasyon özeti — gerçek sayımlar. */
 export async function queryAdminOverview() {
   const session = await requireAuth();
