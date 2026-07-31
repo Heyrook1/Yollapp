@@ -26,14 +26,30 @@ enum VehicleType {
   CAR
 }
 
-model User {
-  id        String   @id @db.Uuid
-  email     String   @unique
-  roles     AppRole[] @default([SENDER])
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+enum ShipmentStatus {
+  DRAFT
+  QUOTED
+  PAID
+  MATCHED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED_DELIVERY
+  RETURNED
+  CANCELLED
+}
 
-  courierProfile CourierProfile?
+model User {
+  id        String    @id @db.Uuid
+  email     String    @unique
+  roles     AppRole[] @default([SENDER])
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  courierProfile   CourierProfile?
+  shipmentsSent    Shipment[]      @relation("ShipmentSender")
+  shipmentsCourier Shipment[]      @relation("ShipmentCourier")
+  shipmentEvents   ShipmentEvent[]
 
   @@map("users")
 }
@@ -56,13 +72,117 @@ model CourierProfile {
   @@map("courier_profiles")
 }
 
-/// Singleton-style platform settings. Commission rate is stored as basis points (e.g. 1500 = 15%).
+/// Singleton-style platform settings. Rates in basis points (e.g. 1500 = 15%).
 model PlatformConfig {
-  id                   String   @id @default("default")
-  commissionBps        Int      @default(1500) @map("commission_bps")
-  expressPremiumBps    Int      @default(5000) @map("express_premium_bps")
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  id                String   @id @default("default")
+  commissionBps     Int      @default(1500) @map("commission_bps")
+  expressPremiumBps Int      @default(5000) @map("express_premium_bps")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("platform_config")
+}
+
+model Zone {
+  id           String   @id @default(uuid()) @db.Uuid
+  code         String   @unique
+  name         String
+  baseFeeMinor Int      @map("base_fee_minor")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  shipments Shipment[]
+
+  @@map("zones")
+}
+
+model SizeClass {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique
+  name       String
+  multiplier Float
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  shipments Shipment[]
+
+  @@map("size_classes")
+}
+
+model Shipment {
+  id              String         @id @default(uuid()) @db.Uuid
+  senderId        String         @map("sender_id") @db.Uuid
+  courierId       String?        @map("courier_id") @db.Uuid
+  status          ShipmentStatus @default(DRAFT)
+  zoneId          String         @map("zone_id") @db.Uuid
+  sizeClassId     String         @map("size_class_id") @db.Uuid
+  isExpress       Boolean        @default(false) @map("is_express")
+  pickupAddress   String         @map("pickup_address")
+  dropoffAddress  String         @map("dropoff_address")
+  recipientName   String         @map("recipient_name")
+  recipientPhone  String         @map("recipient_phone")
+  notes           String?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  sender          User             @relation("ShipmentSender", fields: [senderId], references: [id])
+  courier         User?            @relation("ShipmentCourier", fields: [courierId], references: [id])
+  zone            Zone             @relation(fields: [zoneId], references: [id])
+  sizeClass       SizeClass        @relation(fields: [sizeClassId], references: [id])
+  deliveryWindow  DeliveryWindow?
+  priceQuote      PriceQuote?
+  events          ShipmentEvent[]
+
+  @@index([senderId])
+  @@index([courierId])
+  @@index([status])
+  @@map("shipments")
+}
+
+model DeliveryWindow {
+  id          String   @id @default(uuid()) @db.Uuid
+  shipmentId  String   @unique @map("shipment_id") @db.Uuid
+  /// Inclusive window start (UTC). Display in Europe/Nicosia.
+  startsAt    DateTime @map("starts_at")
+  /// Exclusive window end (UTC).
+  endsAt      DateTime @map("ends_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_windows")
+}
+
+/// Immutable price snapshot at quote time. Client never supplies these amounts.
+model PriceQuote {
+  id                  String   @id @default(uuid()) @db.Uuid
+  shipmentId          String   @unique @map("shipment_id") @db.Uuid
+  amountMinor         Int      @map("amount_minor")
+  zoneBaseMinor       Int      @map("zone_base_minor")
+  sizeMultiplier      Float    @map("size_multiplier")
+  expressPremiumMinor Int      @map("express_premium_minor")
+  commissionBps       Int      @map("commission_bps")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@map("price_quotes")
+}
+
+model ShipmentEvent {
+  id           String          @id @default(uuid()) @db.Uuid
+  shipmentId   String          @map("shipment_id") @db.Uuid
+  fromStatus   ShipmentStatus? @map("from_status")
+  toStatus     ShipmentStatus  @map("to_status")
+  actorUserId  String?         @map("actor_user_id") @db.Uuid
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  actor    User?    @relation(fields: [actorUserId], references: [id])
+
+  @@index([shipmentId, createdAt])
+  @@map("shipment_events")
 }

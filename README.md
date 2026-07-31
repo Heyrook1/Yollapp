@@ -46,4 +46,8 @@ cp .env.example .env
 
 ## MVP sırası
 
-Bkz. [Claude.md](./Claude.md) §11. Bu iskelet MVP #1 (auth + kurye vetting) içerir.
+Bkz. [Claude.md](./Claude.md) §11.
+
+Şu an kodda:
+1. Auth + kurye vetting
+2. Gönderi oluşturma + fiyat teklifi + zaman penceresi / Ekspres

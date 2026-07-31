@@ -30,3 +30,12 @@ export function assertIsSelfOrAdmin(session: SessionUser, userId: string): void 
 export function userHasRole(user: User, role: AppRole): boolean {
   return user.roles.includes(role);
 }
+
+export function assertShipmentSender(
+  session: SessionUser,
+  senderId: string,
+): void {
+  if (session.dbUser.id !== senderId && !hasRole(session.dbUser, AppRole.ADMIN)) {
+    throw new ForbiddenError("Bu gönderiye erişim yok");
+  }
+}
