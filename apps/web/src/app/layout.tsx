@@ -30,6 +30,9 @@ export default function RootLayout({
               <Link href="/sender/shipments" className="hover:text-brand-900">
                 Gönderiler
               </Link>
+              <Link href="/courier/jobs" className="hover:text-brand-900">
+                İşler
+              </Link>
               <Link href="/courier/apply" className="hover:text-brand-900">
                 Kurye ol
               </Link>

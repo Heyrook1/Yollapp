@@ -25,3 +25,15 @@ export const quoteShipmentSchema = z.object({
 });
 
 export type QuoteShipmentInput = z.infer<typeof quoteShipmentSchema>;
+
+export const markPaidSchema = z.object({
+  shipmentId: z.string().uuid(),
+});
+
+export type MarkPaidInput = z.infer<typeof markPaidSchema>;
+
+export const acceptJobSchema = z.object({
+  shipmentId: z.string().uuid(),
+});
+
+export type AcceptJobInput = z.infer<typeof acceptJobSchema>;

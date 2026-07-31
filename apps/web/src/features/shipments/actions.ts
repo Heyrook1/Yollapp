@@ -2,10 +2,16 @@
 
 import { DomainError } from "@yolla/core";
 import { formatTry } from "@yolla/core";
+import { AppRole } from "@yolla/db";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth";
-import { createShipmentSchema } from "./schemas";
-import { createShipmentAndQuote } from "./service";
+import { assertRole } from "@/lib/authorization";
+import { acceptJobSchema, createShipmentSchema, markPaidSchema } from "./schemas";
+import {
+  acceptShipmentJob,
+  createShipmentAndQuote,
+  markShipmentPaid,
+} from "./service";
 import { messages } from "./messages";
 
 export type ActionResult =
@@ -21,6 +27,8 @@ function toUserMessage(error: unknown): string {
         return messages.forbidden;
       case "NOT_FOUND":
         return messages.notFound;
+      case "CONFLICT":
+        return messages.conflict;
       default:
         return messages.genericError;
     }
@@ -34,12 +42,7 @@ export async function createShipmentAction(rawInput: unknown): Promise<ActionRes
     const session = await requireAuth();
     const input = createShipmentSchema.parse(rawInput);
 
-    // Price from client is ignored by design — only zone/size/express drive quote.
-    if (
-      rawInput &&
-      typeof rawInput === "object" &&
-      "price" in rawInput
-    ) {
+    if (rawInput && typeof rawInput === "object" && "price" in rawInput) {
       console.error("ignored client-supplied price on createShipment", {
         shipmentHint: "create",
       });
@@ -55,12 +58,53 @@ export async function createShipmentAction(rawInput: unknown): Promise<ActionRes
 
     revalidatePath("/sender");
     revalidatePath("/sender/shipments");
+    revalidatePath("/courier/jobs");
     return {
       ok: true,
       message: messages.createSuccess,
       shipmentId: result.value.shipment.id,
       amountLabel: formatTry(result.value.quote.amountMinor),
     };
+  } catch (error) {
+    return { ok: false, message: toUserMessage(error) };
+  }
+}
+
+export async function markPaidAction(rawInput: unknown): Promise<ActionResult> {
+  try {
+    const session = await requireAuth();
+    const input = markPaidSchema.parse(rawInput);
+    const result = await markShipmentPaid({
+      senderId: session.dbUser.id,
+      shipmentId: input.shipmentId,
+    });
+    if (!result.ok) {
+      return { ok: false, message: toUserMessage(result.error) };
+    }
+    revalidatePath("/sender/shipments");
+    revalidatePath("/courier/jobs");
+    return { ok: true, message: messages.paySuccess, shipmentId: result.value.id };
+  } catch (error) {
+    return { ok: false, message: toUserMessage(error) };
+  }
+}
+
+export async function acceptJobAction(rawInput: unknown): Promise<ActionResult> {
+  try {
+    const session = await requireAuth();
+    assertRole(session, AppRole.COURIER);
+    const input = acceptJobSchema.parse(rawInput);
+    const result = await acceptShipmentJob({
+      courierId: session.dbUser.id,
+      shipmentId: input.shipmentId,
+    });
+    if (!result.ok) {
+      return { ok: false, message: toUserMessage(result.error) };
+    }
+    revalidatePath("/courier/jobs");
+    revalidatePath("/courier/jobs/mine");
+    revalidatePath("/sender/shipments");
+    return { ok: true, message: messages.acceptSuccess, shipmentId: result.value.id };
   } catch (error) {
     return { ok: false, message: toUserMessage(error) };
   }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PayButton } from "./PayButton";
 import { messages } from "../messages";
 import type { ShipmentRecord } from "../service";
 
@@ -23,18 +24,19 @@ export function ShipmentList({ shipments }: { shipments: Row[] }) {
   return (
     <ul className="space-y-3">
       {shipments.map((s) => (
-        <li key={s.id} className="rounded-md border border-brand-200 bg-white p-4 text-sm">
+        <li key={s.id} className="rounded-md border border-brand-200 bg-white p-4 text-sm space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-medium text-brand-900">
               {messages.status[s.status]}
             </span>
             <span className="text-brand-800">{s.amountLabel ?? "—"}</span>
           </div>
-          <p className="mt-1 text-brand-700">
+          <p className="text-brand-700">
             {s.zoneName} · {s.sizeName}
             {s.isExpress ? " · Ekspres" : ""}
           </p>
           <p className="text-brand-600">{s.dropoffAddress}</p>
+          {s.status === "QUOTED" ? <PayButton shipmentId={s.id} /> : null}
         </li>
       ))}
     </ul>

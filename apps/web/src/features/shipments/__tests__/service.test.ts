@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { PricingDb } from "@/features/pricing/service";
 import {
+  acceptShipmentJob,
   assertSenderOwnsShipment,
   createShipmentAndQuote,
+  markShipmentPaid,
   type ShipmentsDb,
   type ShipmentRecord,
   type PriceQuoteRecord,
@@ -13,6 +15,7 @@ function createMemoryDeps() {
   const quotes = new Map<string, PriceQuoteRecord>();
   const events: Array<{ shipmentId: string; fromStatus: string | null; toStatus: string }> =
     [];
+  const approvedCouriers = new Set<string>(["courier-1"]);
 
   const shipmentsDb: ShipmentsDb = {
     createShipmentWithWindow: async (data) => {
@@ -20,6 +23,7 @@ function createMemoryDeps() {
       const record: ShipmentRecord = {
         id: `ship-${shipments.size + 1}`,
         senderId: data.senderId,
+        courierId: null,
         status: "DRAFT",
         zoneId: data.zoneId,
         sizeClassId: data.sizeClassId,
@@ -38,10 +42,26 @@ function createMemoryDeps() {
     findShipmentById: async (id) => shipments.get(id) ?? null,
     listBySender: async (senderId) =>
       [...shipments.values()].filter((s) => s.senderId === senderId),
+    listAvailableJobs: async () =>
+      [...shipments.values()].filter((s) => s.status === "PAID" && !s.courierId),
+    listByCourier: async (courierId) =>
+      [...shipments.values()].filter((s) => s.courierId === courierId),
     updateStatus: async (id, status) => {
       const existing = shipments.get(id);
       if (!existing) throw new Error("missing");
       const updated = { ...existing, status, updatedAt: new Date() };
+      shipments.set(id, updated);
+      return updated;
+    },
+    assignCourier: async (id, courierId, status) => {
+      const existing = shipments.get(id);
+      if (!existing) throw new Error("missing");
+      const updated = {
+        ...existing,
+        courierId,
+        status,
+        updatedAt: new Date(),
+      };
       shipments.set(id, updated);
       return updated;
     },
@@ -56,6 +76,7 @@ function createMemoryDeps() {
     createEvent: async (data) => {
       events.push(data);
     },
+    isApprovedCourier: async (userId) => approvedCouriers.has(userId),
     transaction: async (fn) => fn(shipmentsDb),
   };
 
@@ -72,7 +93,7 @@ function createMemoryDeps() {
     }),
   };
 
-  return { shipmentsDb, pricingDb, shipments, quotes, events };
+  return { shipmentsDb, pricingDb, shipments, quotes, events, approvedCouriers };
 }
 
 const sampleInput = {
@@ -87,8 +108,16 @@ const sampleInput = {
   windowEndsAt: new Date("2026-08-01T12:00:00.000Z").toISOString(),
 };
 
+async function quotedShipment(deps: ReturnType<typeof createMemoryDeps>) {
+  await createShipmentAndQuote(
+    { senderId: "sender-1", input: sampleInput },
+    { shipments: deps.shipmentsDb, pricing: deps.pricingDb },
+  );
+  return [...deps.shipments.keys()][0]!;
+}
+
 describe("createShipmentAndQuote", () => {
-  it("creates DRAFT then transitions to QUOTED with snapshot", async () => {
+  it("DRAFT sonra QUOTED olur ve fiyat snapshot yazar", async () => {
     const deps = createMemoryDeps();
     const result = await createShipmentAndQuote(
       { senderId: "sender-1", input: sampleInput },
@@ -104,17 +133,78 @@ describe("createShipmentAndQuote", () => {
 });
 
 describe("assertSenderOwnsShipment", () => {
-  it("forbids other senders", async () => {
+  it("başka sender erişemez", async () => {
     const deps = createMemoryDeps();
-    await createShipmentAndQuote(
-      { senderId: "sender-1", input: sampleInput },
-      { shipments: deps.shipmentsDb, pricing: deps.pricingDb },
-    );
-    const id = [...deps.shipments.keys()][0]!;
+    const id = await quotedShipment(deps);
     const result = await assertSenderOwnsShipment("sender-2", id, deps.shipmentsDb);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe("FORBIDDEN");
+    }
+  });
+});
+
+describe("markShipmentPaid", () => {
+  it("QUOTED gönderiyi PAID yapar", async () => {
+    const deps = createMemoryDeps();
+    const id = await quotedShipment(deps);
+    const result = await markShipmentPaid(
+      { senderId: "sender-1", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.status).toBe("PAID");
+    }
+  });
+});
+
+describe("acceptShipmentJob", () => {
+  it("onaylı kurye PAID işi MATCHED yapar", async () => {
+    const deps = createMemoryDeps();
+    const id = await quotedShipment(deps);
+    await markShipmentPaid({ senderId: "sender-1", shipmentId: id }, deps.shipmentsDb);
+    const result = await acceptShipmentJob(
+      { courierId: "courier-1", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.status).toBe("MATCHED");
+      expect(result.value.courierId).toBe("courier-1");
+    }
+  });
+
+  it("onaysız kurye kabul edemez", async () => {
+    const deps = createMemoryDeps();
+    const id = await quotedShipment(deps);
+    await markShipmentPaid({ senderId: "sender-1", shipmentId: id }, deps.shipmentsDb);
+    const result = await acceptShipmentJob(
+      { courierId: "courier-x", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("FORBIDDEN");
+    }
+  });
+
+  it("kurye başkasının MATCHED gönderisini tekrar alamaz", async () => {
+    const deps = createMemoryDeps();
+    const id = await quotedShipment(deps);
+    await markShipmentPaid({ senderId: "sender-1", shipmentId: id }, deps.shipmentsDb);
+    await acceptShipmentJob(
+      { courierId: "courier-1", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    deps.approvedCouriers.add("courier-2");
+    const result = await acceptShipmentJob(
+      { courierId: "courier-2", shipmentId: id },
+      deps.shipmentsDb,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("CONFLICT");
     }
   });
 });
