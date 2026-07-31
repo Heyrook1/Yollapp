@@ -1,47 +1,69 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { shellMessages } from "@/components/ui/messages";
+import { CheckIcon } from "@/components/ui/icons";
+import { shellMessages as m } from "@/components/ui/messages";
 
-export default function HomePage() {
+const trustItems = [
+  m.trustVerifiedCouriers,
+  m.trustLiveTracking,
+  m.trustDeliveryCode,
+] as const;
+
+export default function WelcomePage() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-between bg-surface-dark px-6 pb-10 pt-16 text-ink-inverse">
-      <div className="flex w-full max-w-sm flex-1 flex-col items-center justify-center gap-8">
+    <main className="relative flex min-h-screen flex-col justify-between bg-[radial-gradient(130%_90%_at_85%_0%,#152B50_0%,#0B1220_58%)] px-7 pb-[max(2.75rem,env(safe-area-inset-bottom))] pt-[max(5rem,env(safe-area-inset-top))] text-ink-inverse">
+      <div className="mx-auto flex w-full max-w-sm flex-col gap-7">
         <Image
           src="/brand/yolla-mark.png"
           alt="YOLLA"
-          width={280}
-          height={320}
+          width={150}
+          height={150}
           priority
-          className="h-auto w-[min(72vw,280px)] object-contain"
+          className="-ml-2 h-auto w-[150px] object-contain"
         />
-        <p className="sr-only">
-          {shellMessages.taglineEverywhere}. {shellMessages.taglineEverything}.{" "}
-          {shellMessages.taglineFaster}.
-        </p>
-        <p className="text-center text-base tracking-wide" aria-hidden>
-          <span className="text-yolla-blue">{shellMessages.taglineEverywhere}</span>
-          <span className="mx-2 text-ink-inverse/40">·</span>
-          <span className="text-yolla-orange">{shellMessages.taglineEverything}</span>
-          <span className="mx-2 text-ink-inverse/40">·</span>
-          <span className="text-ink-inverse">{shellMessages.taglineFaster}</span>
-        </p>
+        <div className="space-y-2.5">
+          <h1 className="text-[46px] font-extrabold leading-[1.06] tracking-[-0.04em]">
+            {m.taglineLine1}
+            <br />
+            {m.taglineLine2}
+            <br />
+            <span className="text-[#4d8dff]">{m.taglineLine3}</span>
+          </h1>
+          <p className="text-base font-semibold leading-relaxed text-white/60">
+            {m.welcomeSubtitle}
+          </p>
+        </div>
       </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-3">
-        <Button href="/signup" className="w-full">
-          {shellMessages.start}
+      <div className="mx-auto flex w-full max-w-sm flex-col gap-3.5">
+        <ul className="flex flex-wrap gap-x-4 gap-y-2 pb-1.5" aria-label="Güven unsurları">
+          {trustItems.map((item) => (
+            <li
+              key={item}
+              className="flex items-center gap-1.5 text-[13px] font-bold text-white/75"
+            >
+              <CheckIcon size={15} strokeWidth={3} className="text-[#4ADE80]" />
+              {item}
+            </li>
+          ))}
+        </ul>
+        <Button href="/signup" size="lg" className="w-full">
+          {m.sendPackage}
         </Button>
-        <Button href="/login" variant="secondary" className="w-full border-white/20 bg-transparent text-ink-inverse hover:bg-white/10">
-          {shellMessages.login}
+        <Button
+          href="/login"
+          variant="secondary"
+          className="w-full border-white/25 bg-transparent text-ink-inverse hover:bg-white/10"
+        >
+          {m.login}
         </Button>
-        <div className="flex justify-center gap-4 pt-2 text-sm text-ink-inverse/70">
-          <a href="/sender" className="underline-offset-4 hover:underline">
-            Gönderici
-          </a>
-          <a href="/courier/jobs" className="underline-offset-4 hover:underline">
-            Kurye
-          </a>
-        </div>
+        <Link
+          href="/courier/apply"
+          className="flex min-h-11 items-center justify-center text-[15px] font-extrabold text-accent"
+        >
+          {m.earnByDelivering} →
+        </Link>
       </div>
     </main>
   );

@@ -4,19 +4,23 @@ import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
+import { Field, TextInput } from "@/components/ui/Field";
+import { LockIcon } from "@/components/ui/icons";
 
 type Mode = "login" | "signup";
 
 const copy = {
   login: {
-    title: "Giriş yap",
-    submit: "Giriş",
+    title: "Tekrar\nhoş geldin",
+    subtitle: "Hesabına giriş yap, kaldığın yerden devam et.",
+    submit: "Giriş yap",
     switchLabel: "Hesabın yok mu?",
     switchHref: "/signup",
     switchCta: "Kayıt ol",
   },
   signup: {
-    title: "Kayıt ol",
+    title: "Hesabını\noluştur",
+    subtitle: "Dakikalar içinde ilk paketini gönder.",
     submit: "Kayıt ol",
     switchLabel: "Zaten hesabın var mı?",
     switchHref: "/login",
@@ -67,56 +71,71 @@ export function AuthForm({ mode }: { mode: Mode }) {
         router.push(next);
         router.refresh();
       } catch {
-        setError("Supabase yapılandırması eksik. .env dosyasını kontrol edin.");
+        setError("Bağlantı kurulamadı. Lütfen tekrar deneyin.");
       }
     });
   }
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto max-w-sm space-y-5">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold tracking-widest text-yolla-blue">YOLLA</p>
-        <h1 className="text-2xl font-semibold text-ink">{text.title}</h1>
+    <form onSubmit={onSubmit} className="mx-auto flex w-full max-w-sm flex-col gap-6">
+      <div className="space-y-2">
+        <h1 className="whitespace-pre-line text-[34px] font-extrabold leading-[1.15] tracking-[-0.035em] text-ink">
+          {text.title}
+        </h1>
+        <p className="text-[15px] font-semibold text-ink-secondary">{text.subtitle}</p>
       </div>
-      <div className="space-y-1">
-        <label htmlFor="email" className="block text-sm font-medium text-ink">
-          E-posta
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          autoComplete="email"
-          className="min-h-12 w-full rounded-[12px] border border-border bg-surface-elevated px-3 py-2"
-          value={email}
-          disabled={pending}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+
+      <div className="space-y-4">
+        <Field id="email" label="E-posta" error={undefined}>
+          <TextInput
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="ornek@eposta.com"
+            value={email}
+            disabled={pending}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </Field>
+        <Field id="password" label="Şifre">
+          <TextInput
+            id="password"
+            type="password"
+            required
+            minLength={6}
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            placeholder="••••••••"
+            value={password}
+            disabled={pending}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </Field>
       </div>
-      <div className="space-y-1">
-        <label htmlFor="password" className="block text-sm font-medium text-ink">
-          Şifre
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          minLength={6}
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
-          className="min-h-12 w-full rounded-[12px] border border-border bg-surface-elevated px-3 py-2"
-          value={password}
-          disabled={pending}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+
+      <div className="space-y-3">
+        <Button type="submit" size="lg" loading={pending} className="w-full">
+          {text.submit}
+        </Button>
+        <p className="flex items-center justify-center gap-1.5 text-xs font-bold text-ink-faint">
+          <LockIcon size={13} /> Bilgilerin şifreli olarak saklanır
+        </p>
       </div>
-      <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Bekleyin…" : text.submit}
-      </Button>
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
-      {info ? <p className="text-sm text-ink-secondary">{info}</p> : null}
-      <p className="text-sm text-ink-secondary">
+
+      {error ? (
+        <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-3 text-sm font-bold text-danger">
+          {error}
+        </p>
+      ) : null}
+      {info ? (
+        <p className="rounded-2xl bg-success-soft px-4 py-3 text-sm font-bold text-success-deep">
+          {info}
+        </p>
+      ) : null}
+
+      <p className="text-center text-sm font-semibold text-ink-secondary">
         {text.switchLabel}{" "}
-        <a href={text.switchHref} className="font-semibold text-yolla-blue underline">
+        <a href={text.switchHref} className="font-extrabold text-primary">
           {text.switchCta}
         </a>
       </p>

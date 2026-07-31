@@ -1,24 +1,93 @@
 @import "tailwindcss";
 
 @theme {
-  --color-yolla-blue: #2f6bff;
-  --color-yolla-blue-dark: #1f54d6;
-  --color-yolla-blue-soft: #e8efff;
-  --color-yolla-orange: #ff6a00;
-  --color-yolla-orange-soft: #fff0e6;
-  --color-ink: #0b1220;
-  --color-ink-secondary: #5b657a;
+  /* Brand */
+  --color-primary: #0057ff;
+  --color-primary-deep: #0033cc;
+  --color-primary-soft: #e8efff;
+  --color-accent: #ff8a00;
+  --color-accent-soft: #fff4e6;
+  --color-navy: #0b1220;
+
+  /* Neutrals */
+  --color-ink: #0f172a;
+  --color-ink-secondary: #64748b;
+  --color-ink-faint: #94a3b8;
   --color-ink-inverse: #ffffff;
-  --color-surface: #f5f7fb;
+  --color-surface: #f7f9fc;
   --color-surface-elevated: #ffffff;
   --color-surface-dark: #0b1220;
-  --color-border: #e2e6ef;
-  --color-success: #0f9f6e;
-  --color-warning: #e5a100;
+  --color-fill: #f1f5f9;
+  --color-fill-soft: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-line: #f1f5f9;
+
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-success-deep: #15803d;
+  --color-success-soft: #e9f9ef;
+  --color-warning: #f59e0b;
+  --color-warning-deep: #b45309;
+  --color-warning-soft: #fff4e6;
   --color-danger: #e11d48;
-  --font-sans: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
-  --radius-control: 12px;
-  --radius-sheet: 20px;
+  --color-danger-soft: #fdf2f5;
+  --color-info: #0284c7;
+  --color-info-soft: #e3f2fd;
+
+  /* Legacy aliases (older components keep working) */
+  --color-yolla-blue: #0057ff;
+  --color-yolla-blue-dark: #0033cc;
+  --color-yolla-blue-soft: #e8efff;
+  --color-yolla-orange: #ff8a00;
+  --color-yolla-orange-soft: #fff4e6;
+
+  --font-sans: var(--font-manrope), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-control: 16px;
+  --radius-card: 20px;
+  --radius-card-lg: 24px;
+  --radius-sheet: 32px;
+
+  --shadow-primary: 0 10px 28px rgba(0, 87, 255, 0.35);
+  --shadow-float: 0 6px 20px rgba(11, 18, 32, 0.14);
+  --shadow-sheet: 0 -16px 48px rgba(11, 18, 32, 0.16);
+  --shadow-card: 0 20px 40px -16px rgba(11, 18, 32, 0.35);
+
+  --animate-blink: blink 1.6s infinite;
+  --animate-radar: radar 2.4s ease-out infinite;
+  --animate-radar-late: radar 2.4s ease-out infinite 1.2s;
+  --animate-pulse-ring: pulse-ring 2s infinite;
+
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+  @keyframes radar {
+    0% {
+      transform: scale(0.4);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 rgba(0, 87, 255, 0.45);
+    }
+    70% {
+      box-shadow: 0 0 0 20px rgba(0, 87, 255, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(0, 87, 255, 0);
+    }
+  }
 }
 
 :root {
@@ -31,13 +100,35 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Prefer large tap targets on interactive controls */
+/* Large tap targets, no double-tap zoom on controls */
 button,
 a,
 input,
 select,
 textarea {
   touch-action: manipulation;
+}
+
+/* Visible focus for keyboard users everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

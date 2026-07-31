@@ -1,13 +1,17 @@
 import { Suspense } from "react";
 import { AuthForm } from "@/features/auth/components/AuthForm";
-import { AppShell } from "@/components/ui/AppShell";
+import { TopBar } from "@/components/ui/TopBar";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 
 export default function SignupPage() {
   return (
-    <AppShell>
-      <Suspense fallback={<p className="text-ink-secondary">Yükleniyor…</p>}>
-        <AuthForm mode="signup" />
-      </Suspense>
-    </AppShell>
+    <main className="min-h-screen bg-surface-elevated">
+      <TopBar backHref="/" />
+      <div className="mx-auto max-w-lg px-7 py-4">
+        <Suspense fallback={<ListSkeleton rows={2} />}>
+          <AuthForm mode="signup" />
+        </Suspense>
+      </div>
+    </main>
   );
 }
