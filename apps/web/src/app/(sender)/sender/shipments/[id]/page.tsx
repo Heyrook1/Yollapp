@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth";
 import { queryShipmentDetail, type ShipmentDetail } from "@/features/shipments/queries";
 import { PayButton } from "@/features/shipments/components/PayButton";
 import { CancelShipmentButton } from "@/features/shipments/components/CancelShipmentButton";
+import { ShareTrackingButton } from "@/features/tracking/components/ShareTrackingButton";
 import { Button } from "@/components/ui/Button";
 import { MapCanvas } from "@/components/ui/MapCanvas";
 import { SegmentedProgress } from "@/components/ui/SegmentedProgress";
@@ -209,11 +210,9 @@ export default async function ShipmentDetailPage({
               <div className="border-t border-line pt-4">
                 <Timeline items={buildTimeline(detail)} />
               </div>
-              <div className="flex items-center justify-between border-t border-line pt-3.5 text-sm">
-                <span className="font-extrabold text-ink-faint" title="TrackingToken backend'i bekleniyor">
-                  Takip linki yakında
-                </span>
-                <Link href="/sender/shipments" className="font-bold text-ink-faint">
+              <div className="flex items-start justify-between gap-3 border-t border-line pt-3.5 text-sm">
+                <ShareTrackingButton shipmentId={detail.id} />
+                <Link href="/sender/shipments" className="pt-2 font-bold text-ink-faint">
                   Tüm gönderiler
                 </Link>
               </div>
