@@ -1,0 +1,26 @@
+---
+description: Test kuralları ve zorunlu test alanları
+globs:
+  - "**/__tests__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/tests/**"
+---
+
+# Test Kuralları
+
+- Çerçeve: Vitest. Kritik uçtan uca akışlar için Playwright (sonraki aşama).
+- Test adları Türkçe davranış cümlesi: `it("kapasite doluysa aynı pencereye quote reddedilir")`.
+- `packages/core` saf fonksiyondur — buradaki her modül yüksek kapsamla test edilir.
+
+## Testsiz merge edilemeyecek alanlar
+Bu dosyalara dokunan değişiklik, ilgili testleri de içermek ZORUNDA:
+1. `pricing/service.ts` — zone × size hesabı, ekspres primi, sınır değerler (0, negatif, bilinmeyen zone)
+2. `wallet` — ledger tutarlılığı: her senaryoda SUM doğru, transaction rollback'te kısmi kayıt kalmıyor, idempotency çalışıyor
+3. `shipment-state` — tüm geçerli geçişler + geçersiz geçişlerin reddedilmesi
+4. Sahiplik kontrolleri — kurye başkasının gönderisine erişemiyor, sender başkasının kaydını göremiyor
+
+## Yazım tarzı
+- Arrange/Act/Assert net ayrılır.
+- Mock minimum: servis testlerinde DB için test DB veya in-memory yaklaşım; her şeyi mock'layıp hiçbir şeyi test etmeme tuzağına düşme.
+- Bug fix'i her zaman önce regression testi ile gelir (önce kırmızı, sonra yeşil).

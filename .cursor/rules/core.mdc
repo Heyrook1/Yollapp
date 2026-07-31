@@ -1,0 +1,39 @@
+---
+description: Yolla çekirdek kuralları — her istekte geçerli
+alwaysApply: true
+---
+
+# Yolla — Çekirdek Kurallar
+
+Detaylı bağlam repo kökündeki `CLAUDE.md` dosyasındadır. Çelişki durumunda CLAUDE.md kazanır.
+
+## Proje özü
+- KKTC gig-economy teslimat platformu. Roller: SENDER, COURIER, RECIPIENT (auth'suz, takip linkiyle), ADMIN.
+- Zaman pencereli teslimat varsayılan; `isExpress` prim seçeneği.
+- Fiyat = Zone taban ücreti × SizeClass çarpanı. Komisyon teslimat ücretinden kaynakta kesilir.
+
+## Stack (sabit)
+Next.js App Router + TypeScript strict + Prisma + Supabase + Tailwind + pnpm monorepo.
+Yeni kütüphane eklemeden önce SOR. Kendi başına paket ekleme.
+
+## Mimari
+- İş mantığı `features/<feature>/service.ts` içinde yaşar. Server action ve component'e iş mantığı yazma.
+- Server action'lar ince katman: `requireAuth()` → Zod parse → yetki kontrolü → servis çağrısı. Bu sıra zorunlu.
+- Saf domain mantığı (fiyat hesabı, state machine, para) `packages/core`'da — React/Next import'u yasak.
+- Shipment status'ü doğrudan update etme; SADECE `packages/core/shipment-state.ts` içindeki `transition()` fonksiyonunu kullan. Her geçiş `ShipmentEvent`'e loglanır.
+- Yeni feature yazarken `features/shipments/` klasörünü şablon al; repoya yeni mimari stil sokma.
+
+## Kod stili
+- `any` yasak; `unknown` + narrow. `as` cast son çare, gerekçeli yorum şart.
+- Tipler Zod şemalarından `z.infer` ile türetilir; elle tip + şema çiftlemesi yapılmaz.
+- Kod İngilizce, kullanıcıya görünen metin Türkçe. UI stringleri `messages.ts`'te toplanır.
+- Tarih: DB'de UTC, gösterim Europe/Nicosia.
+- Server Component varsayılan; `"use client"` yalnızca etkileşim gerekince.
+
+## Çalışma protokolü
+1. Yeni özellikte ÖNCE dosya-dosya plan sun, onay almadan kod yazma.
+2. `docs/specs/` altında ilgili spec varsa oku; spec'le çelişen varsayım yapma, soru sor.
+3. Tek seferde tek özellik, küçük diff. İstenmemiş "bonus" değişiklik yapma — ayrı öneri olarak sun.
+4. Mutlu yol yetmez: hata, boş, yetkisiz ve yükleme durumlarını da kodla.
+5. Emin olmadığını uydurma; "kontrol etmemiz gerekiyor" de.
+6. İş sonunda: değişen dosyalar + nasıl test edilir + riskler özetini ver.

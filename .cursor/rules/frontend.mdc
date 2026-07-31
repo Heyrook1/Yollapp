@@ -1,0 +1,19 @@
+---
+description: UI, component ve App Router kuralları
+globs:
+  - "**/app/**/*.tsx"
+  - "**/components/**"
+  - "**/features/**/components/**"
+---
+
+# Frontend Kuralları
+
+- Server Component varsayılan. `"use client"` yalnızca gerçek etkileşim (form, state, event) gerektiğinde ve mümkün olan en küçük yaprak component'te.
+- Sayfa dosyaları (page.tsx) ince: veri çek → feature component'ine ver. Sayfa içinde iş mantığı ve fetch mantığı büyütme.
+- Her veri gösteren ekranda 4 durum zorunlu: yükleniyor, boş, hata, dolu. Sadece "dolu" durumu kodlayıp geçme.
+- Kurye paneli `(courier)/` mobil öncelikli tasarlanır — kurye sahada telefonla kullanır. Dokunma hedefleri büyük, tek elle kullanılabilir akış.
+- Takip sayfası `(public)/t/[token]` auth'suz çalışır, hafif olur, kişisel veri maskeler.
+- UI metinleri Türkçe ve `messages.ts` içinde toplanır; component'e gömülü string bırakma.
+- Tailwind kullan; inline style ve ayrı css dosyası açma (global tema hariç).
+- Form gönderimlerinde çift tıklama koruması (pending state) zorunlu — özellikle quote onayı ve payout talebi.
+- Para gösterimi `packages/core/money.ts` içindeki formatter ile yapılır (kuruş → TL); component içinde bölme işlemi yazma.

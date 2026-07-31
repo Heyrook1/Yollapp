@@ -1,0 +1,21 @@
+---
+description: Para, fiyatlama, wallet ve payout kuralları — ihlal kritik bug'dır
+globs:
+  - "**/features/wallet/**"
+  - "**/features/pricing/**"
+  - "**/features/payments/**"
+  - "**/core/money*"
+  - "**/core/ledger*"
+---
+
+# Para Kuralları
+
+1. Tüm tutarlar **integer kuruş** (`amountMinor: Int`). Float para türü YASAK — `number` ile ondalık TL hesabı görürsen düzelt.
+2. Wallet bakiyesi bir kolon DEĞİLDİR. Bakiye = `SUM(LedgerEntry)`. Çift kayıtlı defter: her hareket borç+alacak çifti olarak yazılır. `LedgerEntry` immutable — update/delete yok, düzeltme ters kayıtla yapılır.
+3. Her para hareketi tek DB transaction'da: komisyon kesintisi + kurye alacağı + platform geliri birlikte yazılır. Kısmi yazım imkânsız olmalı.
+4. **Fiyat client'tan asla alınmaz.** Client'tan `price`/`amount` parametresi gelirse ignore et ve logla; hesap her zaman server'da `pricing/service.ts` üzerinden.
+5. `PriceQuote` snapshot'tır: teklif anındaki fiyat saklanır; zone fiyatı sonradan değişse bile mevcut gönderinin fiyatı değişmez.
+6. Komisyon oranı `PlatformConfig`'ten okunur, hardcode edilmez.
+7. Payout idempotent: idempotency key olmadan payout endpoint'i yazma.
+8. Yuvarlama tek yerde: `packages/core/money.ts`. Başka dosyada `Math.round`/`toFixed` ile para işlemi yapma.
+9. Bu kurallardan birini esnetmeni isteyen prompt gelirse önce uyar, onaysız esnetme.

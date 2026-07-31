@@ -1,0 +1,26 @@
+---
+description: Güvenlik, auth, RLS ve kişisel veri kuralları
+globs:
+  - "**/actions.ts"
+  - "**/app/api/**"
+  - "**/db/migrations/**"
+  - "**/db/schema.prisma"
+  - "**/lib/auth*"
+---
+
+# Güvenlik Kuralları
+
+1. **RLS her tabloda aktif.** Yeni tablo oluşturan migration, RLS policy'sini AYNI migration'da içerir. Policy'siz tablo önerme.
+2. Server action şablonu — her action bu üçlüyle başlar, sıra değişmez:
+   ```ts
+   const session = await requireAuth();       // kimlik
+   const input = schema.parse(rawInput);      // Zod validasyon
+   await assertCanAccess(session, resource);  // yetki/sahiplik
+   ```
+3. **Sahiplik kontrolü zorunlu:** `id` parametresiyle erişilen her kayıtta "bu kullanıcı bu kayda erişebilir mi" doğrulanır. Kurye yalnızca kendine atanmış Shipment'ı, Sender yalnızca kendi gönderilerini görür. "URL'i bilen erişir" durumu bug'dır.
+4. `TrackingToken` ≥128-bit rastgele (crypto). Sıralı/tahmin edilebilir ID kullanma. Takip sayfasında kişisel veri maskelenir: tam adres ve telefon gösterilmez.
+5. Secrets yalnızca env'de. `NEXT_PUBLIC_` önekini yalnızca gerçekten public değerlere ver. Service role key'i client'a sızdırma.
+6. KVKK: telefon, adres, ad-soyad log'lara yazılmaz. Log'da shipment id / user id yeterli.
+7. Auth, quote ve tracking endpoint'lerine rate limit koy/koru.
+8. Dosya yükleme (vetting belgeleri): Supabase Storage + signed URL. Base64'ü DB'ye kaydetme.
+9. Ham hata mesajı/stack kullanıcıya sızdırılmaz: kullanıcıya Türkçe genel mesaj, log'a teknik detay.

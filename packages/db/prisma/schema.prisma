@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AppRole {
+  SENDER
+  COURIER
+  ADMIN
+}
+
+enum CourierStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VehicleType {
+  WALK
+  BIKE
+  MOTORCYCLE
+  CAR
+}
+
+model User {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  roles     AppRole[] @default([SENDER])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  courierProfile CourierProfile?
+
+  @@map("users")
+}
+
+model CourierProfile {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @unique @map("user_id") @db.Uuid
+  status          CourierStatus @default(PENDING)
+  vehicleType     VehicleType   @map("vehicle_type")
+  activeZones     String[]      @default([]) @map("active_zones")
+  documentPaths   String[]      @default([]) @map("document_paths")
+  rejectionReason String?       @map("rejection_reason")
+  reviewedAt      DateTime?     @map("reviewed_at")
+  reviewedById    String?       @map("reviewed_by_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("courier_profiles")
+}
+
+/// Singleton-style platform settings. Commission rate is stored as basis points (e.g. 1500 = 15%).
+model PlatformConfig {
+  id                   String   @id @default("default")
+  commissionBps        Int      @default(1500) @map("commission_bps")
+  expressPremiumBps    Int      @default(5000) @map("express_premium_bps")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_config")
+}

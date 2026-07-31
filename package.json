@@ -1,0 +1,18 @@
+{
+  "name": "yolla",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @yolla/web dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint",
+    "db:generate": "pnpm --filter @yolla/db generate",
+    "db:migrate": "pnpm --filter @yolla/db migrate",
+    "db:seed": "pnpm --filter @yolla/db seed",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.28.0"
+}
