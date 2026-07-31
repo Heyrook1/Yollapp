@@ -13,9 +13,9 @@ export default async function NewShipmentPage() {
     return (
       <section className="space-y-3">
         <h1 className="text-2xl font-semibold">{messages.createTitle}</h1>
-        <p className="text-brand-700">{messages.unauthorized}</p>
+        <p className="text-ink-secondary">{messages.unauthorized}</p>
         <Link href="/login?next=/sender/shipments/new" className="underline">
-          Giriş yap
+          GiriÅŸ yap
         </Link>
       </section>
     );
@@ -36,8 +36,8 @@ export default async function NewShipmentPage() {
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-brand-900">{messages.createTitle}</h1>
-        <Link href="/sender/shipments" className="text-sm text-brand-700 underline">
+        <h1 className="text-2xl font-semibold text-ink">{messages.createTitle}</h1>
+        <Link href="/sender/shipments" className="text-sm text-ink-secondary underline">
           {messages.listTitle}
         </Link>
       </div>

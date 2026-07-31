@@ -13,9 +13,9 @@ export default async function SenderShipmentsPage() {
     return (
       <section className="space-y-3">
         <h1 className="text-2xl font-semibold">{messages.listTitle}</h1>
-        <p className="text-brand-700">{messages.unauthorized}</p>
+        <p className="text-ink-secondary">{messages.unauthorized}</p>
         <Link href="/login?next=/sender/shipments" className="underline">
-          Giriş yap
+          GiriÅŸ yap
         </Link>
       </section>
     );
@@ -36,10 +36,10 @@ export default async function SenderShipmentsPage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-brand-900">{messages.listTitle}</h1>
+        <h1 className="text-2xl font-semibold text-ink">{messages.listTitle}</h1>
         <Link
           href="/sender/shipments/new"
-          className="rounded-md bg-brand-600 px-3 py-2 text-sm text-white hover:bg-brand-700"
+          className="rounded-md bg-yolla-blue px-3 py-2 text-sm text-white hover:bg-yolla-blue-dark"
         >
           {messages.createTitle}
         </Link>

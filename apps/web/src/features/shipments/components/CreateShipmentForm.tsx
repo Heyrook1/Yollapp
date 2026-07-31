@@ -74,8 +74,8 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
 
   if (zones.length === 0 || sizeClasses.length === 0) {
     return (
-      <p className="text-brand-700">
-        Bölge/boyut kataloğu boş. `pnpm db:seed` çalıştırın.
+      <p className="text-ink-secondary">
+        BÃ¶lge/boyut kataloÄŸu boÅŸ. `pnpm db:seed` Ã§alÄ±ÅŸtÄ±rÄ±n.
       </p>
     );
   }
@@ -88,7 +88,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
         </label>
         <select
           id="zone"
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+          className="w-full rounded-md border border-border bg-white px-3 py-2"
           value={zoneId}
           disabled={disabled}
           onChange={(e) => setZoneId(e.target.value)}
@@ -107,7 +107,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
         </label>
         <select
           id="size"
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+          className="w-full rounded-md border border-border bg-white px-3 py-2"
           value={sizeClassId}
           disabled={disabled}
           onChange={(e) => setSizeClassId(e.target.value)}
@@ -139,7 +139,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
             id="wstart"
             type="datetime-local"
             required
-            className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+            className="w-full rounded-md border border-border bg-white px-3 py-2"
             value={windowStartsAt}
             disabled={disabled}
             onChange={(e) => setWindowStartsAt(e.target.value)}
@@ -153,7 +153,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
             id="wend"
             type="datetime-local"
             required
-            className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+            className="w-full rounded-md border border-border bg-white px-3 py-2"
             value={windowEndsAt}
             disabled={disabled}
             onChange={(e) => setWindowEndsAt(e.target.value)}
@@ -168,7 +168,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
         <input
           id="pickup"
           required
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+          className="w-full rounded-md border border-border bg-white px-3 py-2"
           value={pickupAddress}
           disabled={disabled}
           onChange={(e) => setPickupAddress(e.target.value)}
@@ -182,7 +182,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
         <input
           id="dropoff"
           required
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+          className="w-full rounded-md border border-border bg-white px-3 py-2"
           value={dropoffAddress}
           disabled={disabled}
           onChange={(e) => setDropoffAddress(e.target.value)}
@@ -197,7 +197,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
           <input
             id="rname"
             required
-            className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+            className="w-full rounded-md border border-border bg-white px-3 py-2"
             value={recipientName}
             disabled={disabled}
             onChange={(e) => setRecipientName(e.target.value)}
@@ -210,7 +210,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
           <input
             id="rphone"
             required
-            className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+            className="w-full rounded-md border border-border bg-white px-3 py-2"
             value={recipientPhone}
             disabled={disabled}
             onChange={(e) => setRecipientPhone(e.target.value)}
@@ -224,7 +224,7 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
         </label>
         <textarea
           id="notes"
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+          className="w-full rounded-md border border-border bg-white px-3 py-2"
           rows={2}
           value={notes}
           disabled={disabled}
@@ -235,12 +235,12 @@ export function CreateShipmentForm({ zones, sizeClasses }: Props) {
       <button
         type="submit"
         disabled={disabled}
-        className="rounded-md bg-brand-600 px-4 py-2 text-white hover:bg-brand-700 disabled:opacity-60"
+        className="rounded-md bg-yolla-blue px-4 py-2 text-white hover:bg-yolla-blue-dark disabled:opacity-60"
       >
-        {pending ? "Hesaplanıyor…" : messages.createSubmit}
+        {pending ? "HesaplanÄ±yorâ€¦" : messages.createSubmit}
       </button>
 
-      {message ? <p className="text-sm text-brand-700">{message}</p> : null}
+      {message ? <p className="text-sm text-ink-secondary">{message}</p> : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
     </form>
   );

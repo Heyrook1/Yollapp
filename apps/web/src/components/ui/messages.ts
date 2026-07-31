@@ -1,0 +1,17 @@
+export const shellMessages = {
+  brand: "YOLLA",
+  taglineEverywhere: "Her yere",
+  taglineEverything: "Her şeyi",
+  taglineFaster: "Daha hızlı",
+  start: "Başla",
+  login: "Giriş yap",
+  senderHome: "Gönder",
+  senderList: "Gönderilerim",
+  senderAccount: "Hesap",
+  courierMap: "İşler",
+  courierMine: "Aktif",
+  courierApply: "Başvuru",
+  courierAccount: "Profil",
+  adminCouriers: "Kuryeler",
+  adminHome: "Operasyon",
+} as const;

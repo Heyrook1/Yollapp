@@ -16,7 +16,7 @@ export function PendingList({ profiles }: Props) {
   const [isPending, startTransition] = useTransition();
 
   if (profiles.length === 0) {
-    return <p className="text-brand-700">{messages.adminEmpty}</p>;
+    return <p className="text-ink-secondary">{messages.adminEmpty}</p>;
   }
 
   function review(profileId: string, decision: "APPROVE" | "REJECT") {
@@ -35,33 +35,33 @@ export function PendingList({ profiles }: Props) {
 
   return (
     <div className="space-y-4">
-      {feedback ? <p className="text-sm text-brand-800">{feedback}</p> : null}
+      {feedback ? <p className="text-sm text-ink">{feedback}</p> : null}
       <ul className="space-y-4">
         {profiles.map((profile) => {
           const busy = isPending && pendingId === profile.id;
           return (
             <li
               key={profile.id}
-              className="rounded-md border border-brand-200 bg-white p-4 space-y-3"
+              className="rounded-md border border-border bg-white p-4 space-y-3"
             >
-              <div className="text-sm text-brand-800">
+              <div className="text-sm text-ink">
                 <p>
                   <span className="font-medium">Profil:</span> {profile.id}
                 </p>
                 <p>
-                  <span className="font-medium">Araç:</span>{" "}
+                  <span className="font-medium">AraÃ§:</span>{" "}
                   {messages.vehicle[profile.vehicleType]}
                 </p>
                 <p>
-                  <span className="font-medium">Bölgeler:</span>{" "}
+                  <span className="font-medium">BÃ¶lgeler:</span>{" "}
                   {profile.activeZones.join(", ")}
                 </p>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-brand-800">
+                <label className="block text-sm text-ink">
                   {messages.rejectionReasonLabel}
                   <input
-                    className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2"
+                    className="mt-1 w-full rounded-md border border-border px-3 py-2"
                     value={reasons[profile.id] ?? ""}
                     disabled={busy}
                     onChange={(e) =>
@@ -74,7 +74,7 @@ export function PendingList({ profiles }: Props) {
                     type="button"
                     disabled={busy}
                     onClick={() => review(profile.id, "APPROVE")}
-                    className="rounded-md bg-brand-600 px-3 py-2 text-sm text-white hover:bg-brand-700 disabled:opacity-60"
+                    className="rounded-md bg-yolla-blue px-3 py-2 text-sm text-white hover:bg-yolla-blue-dark disabled:opacity-60"
                   >
                     {messages.approve}
                   </button>

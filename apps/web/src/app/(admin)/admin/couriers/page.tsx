@@ -15,9 +15,9 @@ export default async function AdminCouriersPage() {
     return (
       <section className="space-y-3">
         <h1 className="text-2xl font-semibold">{messages.adminTitle}</h1>
-        <p className="text-brand-700">{messages.unauthorized}</p>
-        <Link href="/login?next=/admin/couriers" className="text-brand-700 underline">
-          Giriş yap
+        <p className="text-ink-secondary">{messages.unauthorized}</p>
+        <Link href="/login?next=/admin/couriers" className="text-ink-secondary underline">
+          GiriÅŸ yap
         </Link>
       </section>
     );
@@ -27,7 +27,7 @@ export default async function AdminCouriersPage() {
     return (
       <section className="space-y-3">
         <h1 className="text-2xl font-semibold">{messages.adminTitle}</h1>
-        <p className="text-brand-700">{messages.forbidden}</p>
+        <p className="text-ink-secondary">{messages.forbidden}</p>
       </section>
     );
   }
@@ -46,7 +46,7 @@ export default async function AdminCouriersPage() {
 
   return (
     <section className="space-y-6">
-      <h1 className="text-2xl font-semibold text-brand-900">{messages.adminTitle}</h1>
+      <h1 className="text-2xl font-semibold text-ink">{messages.adminTitle}</h1>
       {loadError ? <p className="text-red-700">{loadError}</p> : <PendingList profiles={profiles} />}
     </section>
   );

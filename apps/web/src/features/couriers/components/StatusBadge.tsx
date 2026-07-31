@@ -10,7 +10,7 @@ const labelByStatus: Record<CourierStatus, string> = {
 
 const classByStatus: Record<CourierStatus, string> = {
   PENDING: "bg-amber-100 text-amber-900",
-  APPROVED: "bg-brand-100 text-brand-900",
+  APPROVED: "bg-yolla-blue-soft text-ink",
   REJECTED: "bg-red-100 text-red-900",
 };
 

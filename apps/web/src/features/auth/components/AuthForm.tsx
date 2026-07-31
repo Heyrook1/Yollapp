@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/Button";
 
 type Mode = "login" | "signup";
 
@@ -72,10 +73,13 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-sm space-y-4">
-      <h1 className="text-2xl font-semibold text-brand-900">{text.title}</h1>
+    <form onSubmit={onSubmit} className="mx-auto max-w-sm space-y-5">
       <div className="space-y-1">
-        <label htmlFor="email" className="block text-sm font-medium">
+        <p className="text-sm font-semibold tracking-widest text-yolla-blue">YOLLA</p>
+        <h1 className="text-2xl font-semibold text-ink">{text.title}</h1>
+      </div>
+      <div className="space-y-1">
+        <label htmlFor="email" className="block text-sm font-medium text-ink">
           E-posta
         </label>
         <input
@@ -83,14 +87,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
           type="email"
           required
           autoComplete="email"
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+          className="min-h-12 w-full rounded-[12px] border border-border bg-surface-elevated px-3 py-2"
           value={email}
           disabled={pending}
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
       <div className="space-y-1">
-        <label htmlFor="password" className="block text-sm font-medium">
+        <label htmlFor="password" className="block text-sm font-medium text-ink">
           Şifre
         </label>
         <input
@@ -99,24 +103,20 @@ export function AuthForm({ mode }: { mode: Mode }) {
           required
           minLength={6}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+          className="min-h-12 w-full rounded-[12px] border border-border bg-surface-elevated px-3 py-2"
           value={password}
           disabled={pending}
           onChange={(e) => setPassword(e.target.value)}
         />
       </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-brand-600 px-4 py-2 text-white hover:bg-brand-700 disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Bekleyin…" : text.submit}
-      </button>
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      {info ? <p className="text-sm text-brand-700">{info}</p> : null}
-      <p className="text-sm text-brand-700">
+      </Button>
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
+      {info ? <p className="text-sm text-ink-secondary">{info}</p> : null}
+      <p className="text-sm text-ink-secondary">
         {text.switchLabel}{" "}
-        <a href={text.switchHref} className="underline">
+        <a href={text.switchHref} className="font-semibold text-yolla-blue underline">
           {text.switchCta}
         </a>
       </p>

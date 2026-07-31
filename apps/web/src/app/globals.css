@@ -1,22 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #f0f7f4;
-  --color-brand-100: #dceee6;
-  --color-brand-200: #b9ddcd;
-  --color-brand-300: #8cc5ad;
-  --color-brand-400: #5aa688;
-  --color-brand-500: #3d8a6d;
-  --color-brand-600: #2e6e57;
-  --color-brand-700: #275847;
-  --color-brand-800: #22473a;
-  --color-brand-900: #1d3b31;
+  --color-yolla-blue: #2f6bff;
+  --color-yolla-blue-dark: #1f54d6;
+  --color-yolla-blue-soft: #e8efff;
+  --color-yolla-orange: #ff6a00;
+  --color-yolla-orange-soft: #fff0e6;
+  --color-ink: #0b1220;
+  --color-ink-secondary: #5b657a;
+  --color-ink-inverse: #ffffff;
+  --color-surface: #f5f7fb;
+  --color-surface-elevated: #ffffff;
+  --color-surface-dark: #0b1220;
+  --color-border: #e2e6ef;
+  --color-success: #0f9f6e;
+  --color-warning: #e5a100;
+  --color-danger: #e11d48;
   --font-sans: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --radius-control: 12px;
+  --radius-sheet: 20px;
 }
 
 :root {
-  --background: #f3f7f5;
-  --foreground: #1d3b31;
+  --background: var(--color-surface);
+  --foreground: var(--color-ink);
 }
 
 body {
@@ -24,4 +31,13 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   min-height: 100vh;
+}
+
+/* Prefer large tap targets on interactive controls */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
 }

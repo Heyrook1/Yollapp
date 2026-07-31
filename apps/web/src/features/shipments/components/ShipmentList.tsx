@@ -13,8 +13,8 @@ export function ShipmentList({ shipments }: { shipments: Row[] }) {
   if (shipments.length === 0) {
     return (
       <div className="space-y-3">
-        <p className="text-brand-700">{messages.listEmpty}</p>
-        <Link href="/sender/shipments/new" className="text-brand-700 underline">
+        <p className="text-ink-secondary">{messages.listEmpty}</p>
+        <Link href="/sender/shipments/new" className="text-ink-secondary underline">
           {messages.createTitle}
         </Link>
       </div>
@@ -24,18 +24,18 @@ export function ShipmentList({ shipments }: { shipments: Row[] }) {
   return (
     <ul className="space-y-3">
       {shipments.map((s) => (
-        <li key={s.id} className="rounded-md border border-brand-200 bg-white p-4 text-sm space-y-3">
+        <li key={s.id} className="rounded-md border border-border bg-white p-4 text-sm space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-medium text-brand-900">
+            <span className="font-medium text-ink">
               {messages.status[s.status]}
             </span>
-            <span className="text-brand-800">{s.amountLabel ?? "—"}</span>
+            <span className="text-ink">{s.amountLabel ?? "â€”"}</span>
           </div>
-          <p className="text-brand-700">
-            {s.zoneName} · {s.sizeName}
-            {s.isExpress ? " · Ekspres" : ""}
+          <p className="text-ink-secondary">
+            {s.zoneName} Â· {s.sizeName}
+            {s.isExpress ? " Â· Ekspres" : ""}
           </p>
-          <p className="text-brand-600">{s.dropoffAddress}</p>
+          <p className="text-ink-secondary">{s.dropoffAddress}</p>
           {s.status === "QUOTED" ? <PayButton shipmentId={s.id} /> : null}
         </li>
       ))}

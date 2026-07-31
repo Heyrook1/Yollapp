@@ -15,9 +15,9 @@ export default async function CourierJobsPage() {
     return (
       <section className="space-y-3">
         <h1 className="text-2xl font-semibold">{messages.jobsTitle}</h1>
-        <p className="text-brand-700">{messages.unauthorized}</p>
+        <p className="text-ink-secondary">{messages.unauthorized}</p>
         <Link href="/login?next=/courier/jobs" className="underline">
-          Giriş yap
+          GiriÅŸ yap
         </Link>
       </section>
     );
@@ -27,9 +27,9 @@ export default async function CourierJobsPage() {
     return (
       <section className="space-y-3">
         <h1 className="text-2xl font-semibold">{messages.jobsTitle}</h1>
-        <p className="text-brand-700">{messages.courierRequired}</p>
+        <p className="text-ink-secondary">{messages.courierRequired}</p>
         <Link href="/courier/apply" className="underline">
-          Kurye başvurusu
+          Kurye baÅŸvurusu
         </Link>
       </section>
     );
@@ -50,8 +50,8 @@ export default async function CourierJobsPage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-brand-900">{messages.jobsTitle}</h1>
-        <Link href="/courier/jobs/mine" className="text-sm text-brand-700 underline">
+        <h1 className="text-2xl font-semibold text-ink">{messages.jobsTitle}</h1>
+        <Link href="/courier/jobs/mine" className="text-sm text-ink-secondary underline">
           {messages.myJobsTitle}
         </Link>
       </div>

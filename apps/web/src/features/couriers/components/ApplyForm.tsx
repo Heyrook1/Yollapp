@@ -48,12 +48,12 @@ export function ApplyForm({ disabled = false }: Props) {
   return (
     <form onSubmit={onSubmit} className="max-w-md space-y-4">
       <div className="space-y-1">
-        <label htmlFor="vehicle" className="block text-sm font-medium text-brand-800">
+        <label htmlFor="vehicle" className="block text-sm font-medium text-ink">
           {messages.vehicleLabel}
         </label>
         <select
           id="vehicle"
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
+          className="w-full rounded-md border border-border bg-white px-3 py-2"
           value={vehicleType}
           disabled={disabled || pending}
           onChange={(e) => setVehicleType(e.target.value as VehicleType)}
@@ -67,13 +67,13 @@ export function ApplyForm({ disabled = false }: Props) {
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="zones" className="block text-sm font-medium text-brand-800">
+        <label htmlFor="zones" className="block text-sm font-medium text-ink">
           {messages.zonesLabel}
         </label>
         <input
           id="zones"
-          className="w-full rounded-md border border-brand-200 bg-white px-3 py-2"
-          placeholder="Lefkoşa, Girne"
+          className="w-full rounded-md border border-border bg-white px-3 py-2"
+          placeholder="LefkoÅŸa, Girne"
           value={zones}
           disabled={disabled || pending}
           onChange={(e) => setZones(e.target.value)}
@@ -84,12 +84,12 @@ export function ApplyForm({ disabled = false }: Props) {
       <button
         type="submit"
         disabled={disabled || pending}
-        className="rounded-md bg-brand-600 px-4 py-2 text-white hover:bg-brand-700 disabled:opacity-60"
+        className="rounded-md bg-yolla-blue px-4 py-2 text-white hover:bg-yolla-blue-dark disabled:opacity-60"
       >
-        {pending ? "Gönderiliyor…" : messages.submitApply}
+        {pending ? "GÃ¶nderiliyorâ€¦" : messages.submitApply}
       </button>
 
-      {message ? <p className="text-sm text-brand-700">{message}</p> : null}
+      {message ? <p className="text-sm text-ink-secondary">{message}</p> : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
     </form>
   );

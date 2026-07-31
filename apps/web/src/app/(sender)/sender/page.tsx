@@ -1,26 +1,23 @@
-import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 export const dynamic = "force-dynamic";
 
 export default function SenderHomePage() {
   return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-semibold text-brand-900">Gönderici paneli</h1>
-      <p className="text-brand-700">Gönderi oluştur, fiyat teklifi al, durumunu takip et.</p>
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/sender/shipments/new"
-          className="rounded-md bg-brand-600 px-4 py-2 text-white hover:bg-brand-700"
-        >
-          Yeni gönderi
-        </Link>
-        <Link
-          href="/sender/shipments"
-          className="rounded-md border border-brand-300 px-4 py-2 text-brand-800 hover:bg-brand-50"
-        >
-          Gönderilerim
-        </Link>
+    <section className="space-y-6">
+      <div className="space-y-2">
+        <p className="text-sm font-semibold tracking-widest text-yolla-blue">YOLLA</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-ink">Nereye göndereceksin?</h1>
+        <p className="text-ink-secondary">
+          Bölge, boyut ve zaman penceresi seç — fiyatı anında gör.
+        </p>
       </div>
+      <Button href="/sender/shipments/new" className="w-full">
+        Yeni gönderi
+      </Button>
+      <Button href="/sender/shipments" variant="secondary" className="w-full">
+        Gönderilerim
+      </Button>
     </section>
   );
 }

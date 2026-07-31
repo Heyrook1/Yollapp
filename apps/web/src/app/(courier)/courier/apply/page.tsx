@@ -15,9 +15,9 @@ export default async function CourierApplyPage() {
     return (
       <section className="space-y-3">
         <h1 className="text-2xl font-semibold">{messages.applyTitle}</h1>
-        <p className="text-brand-700">{messages.unauthorized}</p>
-        <Link href="/login?next=/courier/apply" className="text-brand-700 underline">
-          Giriş yap
+        <p className="text-ink-secondary">{messages.unauthorized}</p>
+        <Link href="/login?next=/courier/apply" className="text-ink-secondary underline">
+          GiriÅŸ yap
         </Link>
       </section>
     );
@@ -41,14 +41,14 @@ export default async function CourierApplyPage() {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-brand-900">{messages.applyTitle}</h1>
-        <p className="text-brand-700">{messages.applySubtitle}</p>
+        <h1 className="text-2xl font-semibold text-ink">{messages.applyTitle}</h1>
+        <p className="text-ink-secondary">{messages.applySubtitle}</p>
       </div>
 
       {loadError ? <p className="text-red-700">{loadError}</p> : null}
 
       {!loadError && !profile ? (
-        <p className="text-brand-700">{messages.noProfile}</p>
+        <p className="text-ink-secondary">{messages.noProfile}</p>
       ) : null}
 
       {profile ? (

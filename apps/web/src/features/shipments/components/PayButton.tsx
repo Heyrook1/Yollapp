@@ -20,11 +20,11 @@ export function PayButton({ shipmentId }: { shipmentId: string }) {
             setFeedback(result.message);
           });
         }}
-        className="min-h-11 rounded-md bg-brand-600 px-4 py-2 text-sm text-white hover:bg-brand-700 disabled:opacity-60"
+        className="min-h-11 rounded-md bg-yolla-blue px-4 py-2 text-sm text-white hover:bg-yolla-blue-dark disabled:opacity-60"
       >
-        {pending ? "İşleniyor…" : messages.payCta}
+        {pending ? "Ä°ÅŸleniyorâ€¦" : messages.payCta}
       </button>
-      {feedback ? <p className="text-xs text-brand-700">{feedback}</p> : null}
+      {feedback ? <p className="text-xs text-ink-secondary">{feedback}</p> : null}
     </div>
   );
 }
