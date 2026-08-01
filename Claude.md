@@ -30,7 +30,9 @@
 
 ## 2. TEKNOLOJİ STACK'İ (SABİT — DEĞİŞTİRME)
 
-- **Framework:** Next.js (App Router) + React + TypeScript (strict mode)
+- **Framework (web):** Next.js (App Router) + React + TypeScript (strict mode)
+- **Framework (mobil):** Expo + expo-router + React Native — bkz. ADR 0003
+  (domain mantığı `packages/core` üzerinden paylaşılır; `packages/db` mobilde kullanılmaz)
 - **DB/Auth/Storage:** Supabase (Postgres + Auth + Storage) — RLS her tabloda AÇIK
 - **ORM:** Prisma
 - **Deploy:** Netlify (`@netlify/plugin-nextjs`) — bkz. ADR 0002
