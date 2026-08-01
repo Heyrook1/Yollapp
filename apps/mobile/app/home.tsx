@@ -55,11 +55,15 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <Button label="Paket gönder" onPress={() => router.push("/")} />
+        <Button label="Paket gönder" onPress={() => router.push("/new-shipment")} />
+        <Button
+          label="Gönderilerim"
+          variant="soft"
+          onPress={() => router.push("/shipments")}
+        />
 
         <Text style={styles.footnote}>
-          Bu ekran mobil uygulamanın ilk sürümüdür. Gönderi oluşturma, canlı takip ve
-          kurye akışı web uygulamasında tamamlanmıştır; mobile taşınmaları sürüyor.
+          Canlı takip ve kurye akışı henüz web uygulamasında; mobile taşınmaları sürüyor.
         </Text>
       </ScrollView>
     </SafeAreaView>
