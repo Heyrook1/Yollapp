@@ -101,9 +101,26 @@ const nicosiaTime = new Intl.DateTimeFormat("tr-TR", {
   minute: "2-digit",
 });
 
-/** Gönderi detayı — sahiplik: gönderici, atanmış kurye ya da admin. */
-export async function queryShipmentDetail(shipmentId: string) {
-  const session = await requireAuth();
+/**
+ * Gönderi detayı — sahiplik: gönderici, atanmış kurye ya da admin.
+ *
+ * `viewer` verilmezse çerez oturumundan çözülür (web). Mobil API Bearer token
+ * ile kimlik doğruladığı için görüntüleyeni açıkça geçer.
+ */
+export async function queryShipmentDetail(
+  shipmentId: string,
+  viewer?: { id: string; isAdmin: boolean },
+) {
+  let resolved: { id: string; isAdmin: boolean };
+  if (viewer) {
+    resolved = viewer;
+  } else {
+    const session = await requireAuth();
+    resolved = {
+      id: session.dbUser.id,
+      isAdmin: session.dbUser.roles.includes(AppRole.ADMIN),
+    };
+  }
 
   const shipment = await prisma.shipment.findUnique({
     where: { id: shipmentId },
@@ -119,9 +136,9 @@ export async function queryShipmentDetail(shipmentId: string) {
     return null;
   }
 
-  const isSender = shipment.senderId === session.dbUser.id;
-  const isCourier = shipment.courierId === session.dbUser.id;
-  const isAdmin = session.dbUser.roles.includes(AppRole.ADMIN);
+  const isSender = shipment.senderId === resolved.id;
+  const isCourier = shipment.courierId === resolved.id;
+  const isAdmin = resolved.isAdmin;
   if (!isSender && !isCourier && !isAdmin) {
     // "URL'i bilen erişir" yasak — sahiplik yoksa kayıt yok gibi davran.
     return null;
@@ -173,12 +190,16 @@ function commissionOf(amountMinor: number, commissionBps: number): number {
 }
 
 /** Kurye kazançları — DELIVERED gönderilerin quote'larından gerçek veriyle türetilir. */
-export async function queryCourierWallet() {
-  const session = await requireAuth();
-  assertRole(session, AppRole.COURIER);
+export async function queryCourierWallet(courierUserId?: string) {
+  let userId = courierUserId;
+  if (!userId) {
+    const session = await requireAuth();
+    assertRole(session, AppRole.COURIER);
+    userId = session.dbUser.id;
+  }
 
   const jobs = await prisma.shipment.findMany({
-    where: { courierId: session.dbUser.id },
+    where: { courierId: userId },
     include: { priceQuote: true },
     orderBy: { updatedAt: "desc" },
   });

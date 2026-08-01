@@ -118,7 +118,75 @@ export type CreateShipmentResult = {
   amountLabel: string;
 };
 
+export type ShipmentDetail = {
+  id: string;
+  code: string;
+  status: string;
+  viewer: "sender" | "courier" | "admin";
+  isExpress: boolean;
+  pickupAddress: string;
+  dropoffAddress: string;
+  recipientName: string;
+  zoneName: string;
+  sizeName: string;
+  amountLabel: string | null;
+  windowLabel: string | null;
+  events: { toStatus: string; timeLabel: string }[];
+};
+
+export type CourierJob = {
+  id: string;
+  code: string;
+  status: string;
+  statusLabel: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  recipientName: string;
+  recipientPhone: string | null;
+  notes: string | null;
+  zoneName: string;
+  sizeName: string;
+  isExpress: boolean;
+  grossLabel: string | null;
+  commissionLabel: string | null;
+  netLabel: string | null;
+  windowLabel: string | null;
+};
+
+export type WalletEntry = {
+  id: string;
+  title: string;
+  detail: string;
+  amountLabel: string;
+  settled: boolean;
+};
+
+export type Me = {
+  email: string;
+  roles: string[];
+  isAdmin: boolean;
+  courier: {
+    status: string;
+    approved: boolean;
+    canApply: boolean;
+    vehicleType: string | null;
+    activeZones: string[];
+    rejectionReason: string | null;
+  };
+  wallet: {
+    availableLabel: string;
+    pendingLabel: string;
+    commissionPctLabel: string;
+    deliveredCount: number;
+    entries: WalletEntry[];
+  } | null;
+};
+
+export type JobAction = "accept" | "pick_up" | "start_transit" | "deliver" | "fail";
+
 export const api = {
+  me: () => request<Me>("/api/v1/me"),
+
   catalog: () =>
     request<{ zones: CatalogZone[]; sizeClasses: CatalogSize[] }>("/api/v1/catalog"),
 
@@ -127,6 +195,33 @@ export const api = {
 
   createShipment: (input: CreateShipmentInput) =>
     request<CreateShipmentResult>("/api/v1/shipments", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+
+  shipmentDetail: (id: string) => request<ShipmentDetail>(`/api/v1/shipments/${id}`),
+
+  shipmentAction: (id: string, action: "pay" | "cancel") =>
+    request<{ status: string }>(`/api/v1/shipments/${id}`, {
+      method: "POST",
+      body: JSON.stringify({ action }),
+    }),
+
+  listJobs: (mine = false) =>
+    request<{ jobs: CourierJob[] }>(`/api/v1/jobs${mine ? "?mine=1" : ""}`),
+
+  jobAction: (id: string, action: JobAction) =>
+    request<{ status: string }>(`/api/v1/jobs/${id}`, {
+      method: "POST",
+      body: JSON.stringify({ action }),
+    }),
+
+  applyCourier: (input: {
+    vehicleType: string;
+    activeZones: string[];
+    documentPaths: string[];
+  }) =>
+    request<{ status: string }>("/api/v1/courier/application", {
       method: "POST",
       body: JSON.stringify(input),
     }),

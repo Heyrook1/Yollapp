@@ -55,11 +55,14 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <Button label="Paket gönder" onPress={() => router.push("/new-shipment")} />
+        <Button
+          label="Paket gönder"
+          onPress={() => router.push("/new-shipment" as never)}
+        />
         <Button
           label="Gönderilerim"
           variant="soft"
-          onPress={() => router.push("/shipments")}
+          onPress={() => router.push("/(tabs)/shipments" as never)}
         />
 
         <Text style={styles.footnote}>

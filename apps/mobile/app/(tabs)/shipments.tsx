@@ -60,7 +60,7 @@ export default function ShipmentsScreen() {
         <Text style={styles.title}>Gönderilerim</Text>
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.push("/new-shipment")}
+          onPress={() => router.push("/new-shipment" as never)}
           style={styles.newButton}
         >
           <Text style={styles.newButtonText}>+ Yeni</Text>
@@ -89,14 +89,18 @@ export default function ShipmentsScreen() {
               </Text>
               <Button
                 label="Paket gönder"
-                onPress={() => router.push("/new-shipment")}
+                onPress={() => router.push("/new-shipment" as never)}
                 style={styles.emptyButton}
               />
             </View>
           )
         }
         renderItem={({ item }) => (
-          <View style={styles.row}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(`/shipment/${item.id}` as never)}
+            style={styles.row}
+          >
             <View style={styles.rowMain}>
               <Text style={styles.rowTitle} numberOfLines={1}>
                 {item.recipientName}
@@ -106,7 +110,7 @@ export default function ShipmentsScreen() {
               </Text>
             </View>
             <Text style={styles.rowStatus}>{item.statusLabel}</Text>
-          </View>
+          </Pressable>
         )}
       />
     </SafeAreaView>

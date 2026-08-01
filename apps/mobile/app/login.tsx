@@ -43,7 +43,7 @@ export default function LoginScreen() {
         setError("Giriş başarısız. E-posta veya şifreyi kontrol edin.");
         return;
       }
-      router.replace("/home");
+      router.replace("/(tabs)" as never);
     } catch (e) {
       setError(
         e instanceof Error && e.message.includes("yapılandırılmadı")

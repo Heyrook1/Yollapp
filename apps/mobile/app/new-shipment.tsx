@@ -130,7 +130,7 @@ export default function NewShipmentScreen() {
         </Text>
         <Button
           label="Gönderilerime dön"
-          onPress={() => router.replace("/shipments")}
+          onPress={() => router.replace("/(tabs)/shipments" as never)}
           style={styles.successButton}
         />
       </SafeAreaView>
