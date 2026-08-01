@@ -31,7 +31,12 @@ sonrası ihtiyaç duyacağı yetenekleri açar.
 - Yeni bir build hattı gerekir (EAS Build) — mağaza dağıtımı için Apple/Google
   geliştirici hesabı zorunlu, bu bir dış bağımlılıktır.
 - Ekranlar tek tek RN'ye taşınacak; bu ADR anında tam eşitlik iddia etmez.
-- pnpm + Metro sembolik link uyumu için `.npmrc` içinde `node-linker=hoisted`
-  kullanılır; aksi halde Metro workspace paketlerini çözemez.
+- pnpm + Metro uyumu **`metro.config.js` ile** çözülür (`nodeModulesPaths` +
+  `disableHierarchicalLookup`). `node-linker=hoisted` DENENDİ ve GERİ ALINDI:
+  hoisting, Next.js iç modüllerinin app'ten farklı bir React kopyası çözmesine
+  yol açtı ve web build'i `Cannot read properties of null (reading 'useContext')`
+  hatasıyla kırdı. İzole (varsayılan) linker ile hem web hem Expo çalışıyor.
+- Monorepo genelinde React sürümü `pnpm.overrides` ile **19.1.0**'a sabitlendi;
+  react-native bu sürümü pinliyor ve iki React kopyası çalışma zamanında kırılır.
 - İki istemci aynı Supabase projesine bağlanır; RLS her iki taraf için de
   tek koruma katmanıdır.

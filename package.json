@@ -17,5 +17,11 @@
   "packageManager": "pnpm@10.28.0",
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.15.13"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
+    }
   }
 }
