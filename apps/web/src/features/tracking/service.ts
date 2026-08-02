@@ -3,6 +3,8 @@ import { prisma } from "@yolla/db";
 import {
   NotFoundError,
   checkTrackingToken,
+  isTrackableStatus,
+  locationFreshness,
   maskAddress,
   maskRecipientName,
   trackingTokenExpiry,
@@ -67,8 +69,22 @@ export type PublicTrackingView = {
   dropoffArea: string;
   pickupArea: string;
   windowLabel: string | null;
-  /** Sağlayıcı yok: canlı konum YOK. Statik veriyi "canlı" diye sunmuyoruz. */
-  liveLocationAvailable: false;
+  sizeLabel: string | null;
+  itemDescription: string | null;
+  itemColor: string | null;
+  courierDisplayName: string | null;
+  courierRatingAvg: number | null;
+  /** Canlı konum yalnızca trackable durumda ve taze veri varsa. */
+  liveLocationAvailable: boolean;
+  live: {
+    lat: number;
+    lng: number;
+    freshness: "live" | "stale" | "offline";
+    receivedAt: string;
+  } | null;
+  pickup: { lat: number; lng: number } | null;
+  dropoff: { lat: number; lng: number } | null;
+  routePolyline: string | null;
   lastUpdatedLabel: string;
   events: { toStatus: ShipmentStatus; timeLabel: string }[];
 };
@@ -102,6 +118,14 @@ export async function lookupByTrackingToken(
         include: {
           deliveryWindow: true,
           events: { orderBy: { createdAt: "asc" } },
+          sizeClass: { select: { name: true } },
+          courier: {
+            include: {
+              courierProfile: {
+                select: { displayName: true, ratingAvg: true, ratingCount: true },
+              },
+            },
+          },
         },
       },
     },
@@ -127,10 +151,38 @@ export async function lookupByTrackingToken(
     });
 
   const shipment = record.shipment;
+
+  const [currentLoc, quote] = await Promise.all([
+    prisma.driverCurrentLocation.findUnique({ where: { shipmentId: shipment.id } }),
+    prisma.priceQuote.findUnique({
+      where: { shipmentId: shipment.id },
+      select: { routePolyline: true },
+    }),
+  ]);
+
+  const trackable = isTrackableStatus(shipment.status);
+  let live: PublicTrackingView["live"] = null;
+  if (trackable && currentLoc) {
+    const freshness = locationFreshness(currentLoc.receivedAt);
+    live = {
+      lat: currentLoc.latitude,
+      lng: currentLoc.longitude,
+      freshness,
+      receivedAt: currentLoc.receivedAt.toISOString(),
+    };
+  }
+
+  const profile = shipment.courier?.courierProfile;
+  const courierDisplayName = profile?.displayName
+    ? profile.displayName
+    : shipment.courierId
+      ? "Yolla Kurye"
+      : null;
+
   return {
     ok: true,
     view: {
-      code: shipment.id.slice(0, 8).toUpperCase(),
+      code: shipment.publicCode ?? shipment.id.slice(0, 8).toUpperCase(),
       status: shipment.status,
       recipientName: maskRecipientName(shipment.recipientName),
       dropoffArea: maskAddress(shipment.dropoffAddress),
@@ -138,7 +190,23 @@ export async function lookupByTrackingToken(
       windowLabel: shipment.deliveryWindow
         ? `${fmt.format(shipment.deliveryWindow.startsAt)} – ${fmt.format(shipment.deliveryWindow.endsAt)}`
         : null,
-      liveLocationAvailable: false,
+      sizeLabel: shipment.sizeClass?.name ?? null,
+      itemDescription: shipment.itemDescription,
+      itemColor: shipment.itemColor,
+      courierDisplayName,
+      courierRatingAvg:
+        profile && profile.ratingCount > 0 ? profile.ratingAvg : null,
+      liveLocationAvailable: Boolean(live && live.freshness === "live"),
+      live,
+      pickup:
+        shipment.pickupLat != null && shipment.pickupLng != null
+          ? { lat: shipment.pickupLat, lng: shipment.pickupLng }
+          : null,
+      dropoff:
+        shipment.dropoffLat != null && shipment.dropoffLng != null
+          ? { lat: shipment.dropoffLat, lng: shipment.dropoffLng }
+          : null,
+      routePolyline: quote?.routePolyline ?? null,
       lastUpdatedLabel: fmt.format(shipment.updatedAt),
       events: shipment.events.map((e) => ({
         toStatus: e.toStatus,

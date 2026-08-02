@@ -4,3 +4,6 @@ export * from "./pricing";
 export * from "./shipment-state";
 export * from "./ledger";
 export * from "./tracking";
+export * from "./geo";
+export * from "./presence";
+export * from "./shipment-identity";

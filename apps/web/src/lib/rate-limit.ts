@@ -12,7 +12,14 @@ import { prisma } from "@yolla/db";
  * Redis tabanlı sliding window'a taşınmalı.
  */
 
-export type RateLimitBucket = "auth" | "quote" | "tracking" | "incident" | "payout";
+export type RateLimitBucket =
+  | "auth"
+  | "quote"
+  | "tracking"
+  | "incident"
+  | "payout"
+  | "maps"
+  | "location";
 
 type BucketConfig = { limit: number; windowSeconds: number };
 
@@ -25,6 +32,10 @@ const buckets: Record<RateLimitBucket, BucketConfig> = {
   tracking: { limit: 60, windowSeconds: 60 },
   incident: { limit: 10, windowSeconds: 300 },
   payout: { limit: 5, windowSeconds: 3600 },
+  // Places / Routes proxy.
+  maps: { limit: 60, windowSeconds: 60 },
+  // Kurye konum ingest.
+  location: { limit: 120, windowSeconds: 60 },
 };
 
 export type RateLimitResult = {

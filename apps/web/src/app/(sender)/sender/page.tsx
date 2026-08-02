@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DomainError, type ShipmentStatus } from "@yolla/core";
 import { getSession } from "@/lib/auth";
 import { queryMyShipments } from "@/features/shipments/queries";
+import { NearbyCouriersStrip } from "@/features/maps/components/NearbyCouriersStrip";
 import { shipmentStatusMeta } from "@/components/ui/StatusBadge";
 import { SegmentedProgress } from "@/components/ui/SegmentedProgress";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +11,6 @@ import {
   DocumentIcon,
   PackageIcon,
   RepeatIcon,
-  TruckIcon,
 } from "@/components/ui/icons";
 
 export const dynamic = "force-dynamic";
@@ -116,13 +116,9 @@ export default async function SenderHomePage() {
           </span>
           <span className="text-xs font-bold text-ink-secondary">İşletme</span>
         </Link>
-        <Link href="/courier/apply" className="flex flex-col items-center gap-2">
-          <span className="flex size-15 items-center justify-center rounded-[20px] bg-accent-soft text-warning-deep">
-            <TruckIcon size={26} />
-          </span>
-          <span className="text-xs font-bold text-warning-deep">Kurye ol</span>
-        </Link>
       </nav>
+
+      <NearbyCouriersStrip />
 
       {loadError ? (
         <div className="px-6 pt-3">

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/EmptyState";
 import { ToneBadge } from "@/components/ui/StatusBadge";
 import { CheckIcon, ClockIcon, StarIcon, TruckIcon } from "@/components/ui/icons";
+import { CourierOnlineToggle } from "@/features/maps/components/CourierOnlineToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -109,15 +110,13 @@ export default async function CourierHomePage() {
 
   return (
     <main className="mx-auto max-w-lg pb-32">
-      <div className="flex items-center justify-between px-6 pt-[max(3.5rem,env(safe-area-inset-top))]">
+      <div className="flex items-start justify-between gap-3 px-6 pt-[max(3.5rem,env(safe-area-inset-top))]">
         <h1 className="text-[26px] font-extrabold tracking-[-0.025em] text-ink">Kurye paneli</h1>
-        <span className="flex items-center gap-2 rounded-full bg-navy py-2 pl-4 pr-2.5 text-sm font-extrabold text-[#4ADE80]">
-          Çevrimiçisin
-          <span className="relative inline-block h-7 w-11 rounded-full bg-success" aria-hidden>
-            <span className="absolute right-0.5 top-0.5 size-6 rounded-full bg-white" />
-          </span>
-        </span>
+        <CourierOnlineToggle />
       </div>
+      <p className="px-6 pt-2 text-[11px] font-semibold text-ink-faint">
+        Çevrimiçi olunca göndericiler haritada seni görebilir (isim/telefon yok).
+      </p>
 
       <div className="px-6 pt-4">
         <div className="flex items-end justify-between rounded-[24px] bg-fill-soft p-5">
@@ -144,7 +143,7 @@ export default async function CourierHomePage() {
       <div className="px-6 pt-6">
         <div className="flex items-baseline justify-between pb-2">
           <h2 className="text-[13px] font-extrabold tracking-[0.06em] text-ink-faint">
-            AÇIK İŞLER
+            GÖNDERİM TALEPLERİ
           </h2>
           <Link href="/courier/jobs/mine" className="text-[13px] font-extrabold text-primary">
             Aktif işlerim →

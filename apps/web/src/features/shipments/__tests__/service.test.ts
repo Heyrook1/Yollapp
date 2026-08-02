@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { computeWalletBalances, splitDeliveryEarning } from "@yolla/core";
 import type { PricingDb } from "@/features/pricing/service";
+import type { LedgerWriteRecord, WalletLedgerDb } from "@/features/wallet/service";
 import {
   acceptShipmentJob,
   assertSenderOwnsShipment,
@@ -18,6 +20,29 @@ function createMemoryDeps() {
   const events: Array<{ shipmentId: string; fromStatus: string | null; toStatus: string }> =
     [];
   const approvedCouriers = new Set<string>(["courier-1"]);
+  const wallets = new Map<string, { id: string; userId: string }>();
+  const ledger = new Map<string, LedgerWriteRecord>();
+
+  const walletLedger: WalletLedgerDb = {
+    ensureWallet: async (userId) => {
+      const existing = wallets.get(userId);
+      if (existing) return existing;
+      const created = { id: `wallet-${userId}`, userId };
+      wallets.set(userId, created);
+      return created;
+    },
+    findQuoteByShipmentId: async (shipmentId) => {
+      const q = quotes.get(shipmentId);
+      return q ? { amountMinor: q.amountMinor, commissionBps: q.commissionBps } : null;
+    },
+    hasIdempotencyKey: async (key) => ledger.has(key),
+    createLedgerEntry: async (data) => {
+      if (ledger.has(data.idempotencyKey)) {
+        throw new Error("duplicate idempotency key");
+      }
+      ledger.set(data.idempotencyKey, data);
+    },
+  };
 
   const shipmentsDb: ShipmentsDb = {
     createShipmentWithWindow: async (data) => {
@@ -88,6 +113,7 @@ function createMemoryDeps() {
       events.push(data);
     },
     isApprovedCourier: async (userId) => approvedCouriers.has(userId),
+    walletLedger: () => walletLedger,
     transaction: async (fn) => fn(shipmentsDb),
   };
 
@@ -104,13 +130,14 @@ function createMemoryDeps() {
     }),
   };
 
-  return { shipmentsDb, pricingDb, shipments, quotes, events, approvedCouriers };
+  return { shipmentsDb, pricingDb, shipments, quotes, events, approvedCouriers, ledger, wallets };
 }
 
 const sampleInput = {
   zoneId: "zone-1",
   sizeClassId: "size-m",
   isExpress: false,
+  isTaxiCargo: false,
   pickupAddress: "Lefkoşa Merkez 1",
   dropoffAddress: "Girne Liman 2",
   recipientName: "Ali Veli",
@@ -293,6 +320,59 @@ describe("progressShipmentAsCourier", () => {
     expect(toStatuses).toContain("PICKED_UP");
     expect(toStatuses).toContain("IN_TRANSIT");
     expect(toStatuses).toContain("DELIVERED");
+
+    // DELIVER aynı TX'de deftere kazanç + komisyon yazar.
+    const quote = deps.quotes.get(id)!;
+    const split = splitDeliveryEarning(quote.amountMinor, quote.commissionBps);
+    expect(deps.ledger.size).toBe(2);
+    const balances = computeWalletBalances([...deps.ledger.values()]);
+    expect(balances.availableMinor).toBe(split.netMinor);
+    expect(balances.totalCommissionMinor).toBe(split.commissionMinor);
+  });
+
+  it("aynı teslimat iki kez deftere yazılmaz (idempotent)", async () => {
+    const deps = createMemoryDeps();
+    const id = await matchedShipment(deps);
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "PICK_UP" },
+      deps.shipmentsDb,
+    );
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "START_TRANSIT" },
+      deps.shipmentsDb,
+    );
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "DELIVER" },
+      deps.shipmentsDb,
+    );
+    expect(deps.ledger.size).toBe(2);
+
+    // Manuel ikinci settle — idempotency key var, yeni satır yok.
+    const { settleDeliveryEarning } = await import("@/features/wallet/service");
+    const again = await settleDeliveryEarning(
+      { courierId: "courier-1", shipmentId: id },
+      deps.shipmentsDb.walletLedger(),
+    );
+    expect(again.ok).toBe(true);
+    expect(deps.ledger.size).toBe(2);
+  });
+
+  it("FAIL_DELIVERY deftere kazanç yazmaz", async () => {
+    const deps = createMemoryDeps();
+    const id = await matchedShipment(deps);
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "PICK_UP" },
+      deps.shipmentsDb,
+    );
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "START_TRANSIT" },
+      deps.shipmentsDb,
+    );
+    await progressShipmentAsCourier(
+      { courierId: "courier-1", shipmentId: id, event: "FAIL_DELIVERY" },
+      deps.shipmentsDb,
+    );
+    expect(deps.ledger.size).toBe(0);
   });
 
   it("atanmamış kurye durumu ilerletemez", async () => {

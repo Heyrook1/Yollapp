@@ -28,6 +28,21 @@ enum VehicleType {
   BIKE
   MOTORCYCLE
   CAR
+  /// Taksi ile Gönder — yolcu + kargo eşzamanlı yasak (server enforced).
+  TAXI
+}
+
+enum TrackingSessionStatus {
+  ACTIVE
+  ENDED
+  REVOKED
+}
+
+/// Kurye harita varlık durumu (gönderiden bağımsız presence).
+enum CourierActivity {
+  AVAILABLE
+  ON_JOB
+  BUSY
 }
 
 enum ShipmentStatus {
@@ -60,6 +75,12 @@ model User {
   incidentsAssigned Incident[]      @relation("IncidentAssignee")
   auditLogs         AuditLog[]
   consents          Consent[]
+  trackingSessions  DeliveryTrackingSession[]
+  currentLocations  DriverCurrentLocation[]
+  locationHistory   DriverLocationHistory[]
+  courierPresence   CourierPresence?
+  ratingsGiven      Rating[] @relation("RatingFrom")
+  ratingsReceived   Rating[] @relation("RatingTo")
 
   @@map("users")
 }
@@ -69,9 +90,17 @@ model CourierProfile {
   userId          String        @unique @map("user_id") @db.Uuid
   status          CourierStatus @default(PENDING)
   vehicleType     VehicleType   @map("vehicle_type")
+  /// Taksi kargo yeteneği — yalnızca vehicleType=TAXI ve onaylı belgelerle.
+  taxiCargoEnabled Boolean      @default(false) @map("taxi_cargo_enabled")
+  /// Yolcu taşıyorken kargo kabul edilemez.
+  carryingPassenger Boolean     @default(false) @map("carrying_passenger")
   activeZones     String[]      @default([]) @map("active_zones")
   documentPaths   String[]      @default([]) @map("document_paths")
   rejectionReason String?       @map("rejection_reason")
+  /// Kamu profilde görünen ad (PII minimizasyonu — tam legal isim değil).
+  displayName     String?       @map("display_name")
+  ratingAvg       Float         @default(0) @map("rating_avg")
+  ratingCount     Int           @default(0) @map("rating_count")
   reviewedAt      DateTime?     @map("reviewed_at")
   reviewedById    String?       @map("reviewed_by_id") @db.Uuid
   createdAt       DateTime      @default(now()) @map("created_at")
@@ -129,11 +158,28 @@ model Shipment {
   zoneId         String         @map("zone_id") @db.Uuid
   sizeClassId    String         @map("size_class_id") @db.Uuid
   isExpress      Boolean        @default(false) @map("is_express")
+  /// Taksi ile Gönder hizmeti.
+  isTaxiCargo    Boolean        @default(false) @map("is_taxi_cargo")
   pickupAddress  String         @map("pickup_address")
   dropoffAddress String         @map("dropoff_address")
+  pickupPlaceId  String?        @map("pickup_place_id")
+  dropoffPlaceId String?        @map("dropoff_place_id")
+  pickupLat      Float?         @map("pickup_lat")
+  pickupLng      Float?         @map("pickup_lng")
+  dropoffLat     Float?         @map("dropoff_lat")
+  dropoffLng     Float?         @map("dropoff_lng")
+  pickupEntranceNote String?    @map("pickup_entrance_note")
+  dropoffEntranceNote String?   @map("dropoff_entrance_note")
   recipientName  String         @map("recipient_name")
   recipientPhone String         @map("recipient_phone")
   notes          String?
+  /// Kısa sipariş no — örn. YLA-8K2F (public track / UI).
+  publicCode     String?        @unique @map("public_code")
+  /// Gönderilecek malın cinsi (takip kartı).
+  itemDescription String?       @map("item_description")
+  itemColor      String?        @map("item_color")
+  /// Teslim doğrulama kodunun SHA-256 hash'i — ham kod saklanmaz.
+  deliveryCodeHash String?      @map("delivery_code_hash")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
 
@@ -147,11 +193,34 @@ model Shipment {
   trackingTokens TrackingToken[]
   ledgerEntries  LedgerEntry[]
   incidents      Incident[]
+  trackingSessions DeliveryTrackingSession[]
+  currentLocations DriverCurrentLocation[]
+  locationHistory  DriverLocationHistory[]
+  rating         Rating?
 
   @@index([senderId])
   @@index([courierId])
   @@index([status])
   @@map("shipments")
+}
+
+/// Gönderi başına tek değerlendirme (gönderici → kurye).
+model Rating {
+  id          String   @id @default(uuid()) @db.Uuid
+  shipmentId  String   @unique @map("shipment_id") @db.Uuid
+  fromUserId  String   @map("from_user_id") @db.Uuid
+  toUserId    String   @map("to_user_id") @db.Uuid
+  stars       Int
+  tags        String[] @default([])
+  comment     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  fromUser User     @relation("RatingFrom", fields: [fromUserId], references: [id])
+  toUser   User     @relation("RatingTo", fields: [toUserId], references: [id])
+
+  @@index([toUserId, createdAt])
+  @@map("ratings")
 }
 
 model DeliveryWindow {
@@ -178,11 +247,104 @@ model PriceQuote {
   sizeMultiplier      Float    @map("size_multiplier")
   expressPremiumMinor Int      @map("express_premium_minor")
   commissionBps       Int      @map("commission_bps")
+  /// Server-side Routes API snapshot (optional until maps enabled).
+  routeDistanceMeters Int?     @map("route_distance_meters")
+  routeDurationSeconds Int?    @map("route_duration_seconds")
+  routePolyline       String?  @map("route_polyline") @db.Text
+  routeExpiresAt      DateTime? @map("route_expires_at")
   createdAt           DateTime @default(now()) @map("created_at")
 
   shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
 
   @@map("price_quotes")
+}
+
+/// Aktif teslimat için konum paylaşım oturumu.
+model DeliveryTrackingSession {
+  id         String                @id @default(uuid()) @db.Uuid
+  shipmentId String                @map("shipment_id") @db.Uuid
+  driverId   String                @map("driver_id") @db.Uuid
+  status     TrackingSessionStatus @default(ACTIVE)
+  startedAt  DateTime              @default(now()) @map("started_at")
+  endedAt    DateTime?             @map("ended_at")
+  lastLocationAt DateTime?         @map("last_location_at")
+  expiresAt  DateTime              @map("expires_at")
+  createdAt  DateTime              @default(now()) @map("created_at")
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  driver   User     @relation(fields: [driverId], references: [id])
+
+  @@index([shipmentId, status])
+  @@index([driverId, status])
+  @@map("delivery_tracking_sessions")
+}
+
+/// Gönderiden bağımsız kurye varlık satırı — müsait / işte / meşgul harita okuması.
+model CourierPresence {
+  id              String          @id @default(uuid()) @db.Uuid
+  courierUserId   String          @unique @map("courier_user_id") @db.Uuid
+  latitude        Float
+  longitude       Float
+  heading         Float?
+  accuracyMeters  Float?          @map("accuracy_meters")
+  activity        CourierActivity @default(AVAILABLE)
+  sharingEnabled  Boolean         @default(false) @map("sharing_enabled")
+  /// Yazım anındaki araç tipi anlık görüntüsü (profil değişse bile marker tutarlı).
+  vehicleType     VehicleType     @map("vehicle_type")
+  sequenceNumber  Int             @default(0) @map("sequence_number")
+  lastSeenAt      DateTime        @map("last_seen_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  courier User @relation(fields: [courierUserId], references: [id], onDelete: Cascade)
+
+  @@index([sharingEnabled, activity, lastSeenAt])
+  @@map("courier_presences")
+}
+
+/// Hızlı okuma için son bilinen sürücü konumu (tek satır / gönderi).
+model DriverCurrentLocation {
+  id                   String   @id @default(uuid()) @db.Uuid
+  driverId             String   @map("driver_id") @db.Uuid
+  shipmentId           String   @map("shipment_id") @db.Uuid
+  latitude             Float
+  longitude            Float
+  accuracyMeters       Float?   @map("accuracy_meters")
+  heading              Float?
+  speedMetersPerSecond Float?   @map("speed_mps")
+  sequenceNumber       Int      @map("sequence_number")
+  deviceTimestamp      DateTime? @map("device_timestamp")
+  recordedAt           DateTime @map("recorded_at")
+  receivedAt           DateTime @default(now()) @map("received_at")
+
+  driver   User     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([shipmentId])
+  @@index([driverId])
+  @@map("driver_current_locations")
+}
+
+/// Operasyonel geçmiş — sınırlı saklama (retention job).
+model DriverLocationHistory {
+  id                   String   @id @default(uuid()) @db.Uuid
+  shipmentId           String   @map("shipment_id") @db.Uuid
+  driverId             String   @map("driver_id") @db.Uuid
+  latitude             Float
+  longitude            Float
+  accuracyMeters       Float?   @map("accuracy_meters")
+  heading              Float?
+  speedMetersPerSecond Float?   @map("speed_mps")
+  sequenceNumber       Int      @map("sequence_number")
+  recordedAt           DateTime @map("recorded_at")
+  receivedAt           DateTime @default(now()) @map("received_at")
+
+  driver   User     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, receivedAt])
+  @@index([receivedAt])
+  @@map("driver_location_history")
 }
 
 model ShipmentEvent {

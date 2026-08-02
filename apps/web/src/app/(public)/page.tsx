@@ -48,11 +48,11 @@ export default function WelcomePage() {
             </li>
           ))}
         </ul>
-        <Button href="/signup" size="lg" className="w-full">
+        <Button href="/signup?next=/sender" size="lg" className="w-full">
           {m.sendPackage}
         </Button>
         <Button
-          href="/login"
+          href="/login?next=/sender"
           variant="secondary"
           className="w-full border-white/25 bg-transparent text-ink-inverse hover:bg-white/10"
         >

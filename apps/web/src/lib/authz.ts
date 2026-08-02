@@ -20,6 +20,8 @@ export type Capability =
   | "courier:progress_job"
   | "courier:wallet"
   | "courier:request_payout"
+  | "courier:share_presence"
+  | "courier:view_presence"
   | "incident:create"
   | "admin:access"
   | "admin:review_courier"
@@ -67,7 +69,12 @@ export function can(state: AccountState, capability: Capability): boolean {
     case "courier:progress_job":
     case "courier:wallet":
     case "courier:request_payout":
+    case "courier:share_presence":
       return isApprovedCourier(state);
+
+    // Gönderici + admin canlı varlık haritasını okuyabilir (kurye–kurye yok).
+    case "courier:view_presence":
+      return has(user, AppRole.SENDER) || admin;
 
     case "admin:access":
     case "admin:review_courier":
@@ -86,6 +93,8 @@ const capabilityMessages: Record<Capability, string> = {
   "courier:progress_job": "Bu işlemi yapmak için onaylı kurye olmalısınız.",
   "courier:wallet": "Kurye cüzdanına erişim yok.",
   "courier:request_payout": "Para çekme yetkiniz yok.",
+  "courier:share_presence": "Konum paylaşımı için onaylı kurye olmalısınız.",
+  "courier:view_presence": "Kurye haritasını görme yetkiniz yok.",
   "incident:create": "Sorun bildirme yetkiniz yok.",
   "admin:access": "Bu alana erişim yetkiniz yok.",
   "admin:review_courier": "Kurye başvurusu değerlendirme yetkiniz yok.",

@@ -1,54 +1,38 @@
-# Yolla
+# Yolla AI Engineering Operating System — Audited Edition
 
-KKTC içi gig-economy teslimat platformu.
+This package provides Cursor `.mdc` rules and living project documents for a structured AI engineering workflow.
 
-## Stack
+## Verified Package Contents
 
-- pnpm monorepo
-- Next.js App Router (`apps/web`)
-- Prisma + Supabase (`packages/db`, Auth)
-- Saf domain (`packages/core`)
+- 69 Cursor `.mdc` rules
+- 18 always-applied core roles
+- 51 intelligently requested councils, guardians, and audit engines
+- CTO Living Project Intelligence
+- Project status, risk, roadmap, architecture, product, design-system, metrics, release, ADR, audit, decision, and changelog templates
+- Local package validation script
 
-## Kurulum
+## How It Works
+
+The core leadership and engineering roles use `alwaysApply: true`.
+
+Specialized councils and guardians use `alwaysApply: false` with a clear description. Cursor can include them when relevant, and you can also explicitly mention a rule when needed.
+
+These rules do not execute in the background. They guide Cursor whenever you run a chat or agent task.
+
+## Installation
+
+Copy `.cursor/`, `docs/`, and optionally `scripts/` into the root of your project.
+
+Then use `docs/INITIAL_AUDIT_PROMPT.md` for the first repository audit.
+
+## Validation
+
+Run:
 
 ```bash
-pnpm install
-cp .env.example apps/web/.env.local
-# apps/web/.env.local ve gerekirse kök .env içine Supabase + DATABASE_URL doldur
-pnpm db:generate
-pnpm db:migrate
-pnpm db:seed
-pnpm dev
+python scripts/validate_package.py
 ```
 
-`DATABASE_URL` Prisma için kök veya `packages/db` ortamında da bulunmalıdır:
+## Important
 
-```bash
-# örnek
-cp .env.example .env
-```
-
-## Scriptler
-
-| Komut | Açıklama |
-|---|---|
-| `pnpm dev` | Next.js geliştirme sunucusu |
-| `pnpm test` | Vitest (core + web) |
-| `pnpm db:generate` | Prisma client |
-| `pnpm db:migrate` | Migration uygula |
-| `pnpm db:seed` | PlatformConfig + ADMIN bootstrap |
-
-## Admin ilk kullanıcı
-
-1. `ADMIN_BOOTSTRAP_EMAIL` değerindeki e-posta ile `/signup`
-2. `pnpm db:seed`
-3. `/admin/couriers`
-
-## MVP sırası
-
-Bkz. [Claude.md](./Claude.md) §11.
-
-Şu an kodda:
-1. Auth + kurye vetting
-2. Gönderi oluşturma + fiyat teklifi + zaman penceresi / Ekspres
-3. Mock ödeme + kurye iş listesi / kabul (MATCHED)
+The initial status documents intentionally contain `Unknown` values. The CTO must replace them only after inspecting the real repository. This prevents fabricated progress percentages and unsupported readiness claims.

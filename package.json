@@ -9,6 +9,7 @@
     "db:generate": "pnpm --filter @yolla/db generate",
     "db:migrate": "pnpm --filter @yolla/db migrate",
     "db:seed": "pnpm --filter @yolla/db seed",
+    "db:seed:demo": "pnpm --filter @yolla/db seed:demo",
     "typecheck": "pnpm -r run typecheck"
   },
   "engines": {

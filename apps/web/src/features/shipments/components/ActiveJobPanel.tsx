@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import type { ShipmentStatus } from "@yolla/core";
 import { courierProgressAction } from "../actions";
 import { Button } from "@/components/ui/Button";
+import { TextInput } from "@/components/ui/Field";
 import { ConfirmDialog } from "@/components/ui/Sheet";
 import { SegmentedProgress } from "@/components/ui/SegmentedProgress";
 import { ShipmentStatusBadge } from "@/components/ui/StatusBadge";
 import { AlertIcon, PhoneIcon } from "@/components/ui/icons";
+import { CourierLocationSharer } from "@/features/maps/components/CourierLocationSharer";
 
 export type CourierJob = {
   id: string;
+  publicCode?: string | null;
   status: ShipmentStatus;
   pickupAddress: string;
   dropoffAddress: string;
@@ -67,6 +70,7 @@ const steps: Partial<Record<ShipmentStatus, StepConfig>> = {
 export function ActiveJobPanel({ job }: { job: CourierJob }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState<"progress" | "fail" | null>(null);
+  const [deliveryCode, setDeliveryCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -76,7 +80,11 @@ export function ActiveJobPanel({ job }: { job: CourierJob }) {
   function run(event: "PICK_UP" | "START_TRANSIT" | "DELIVER" | "FAIL_DELIVERY") {
     setError(null);
     startTransition(async () => {
-      const result = await courierProgressAction({ shipmentId: job.id, event });
+      const result = await courierProgressAction({
+        shipmentId: job.id,
+        event,
+        deliveryCode: event === "DELIVER" ? deliveryCode : undefined,
+      });
       setConfirming(null);
       if (result.ok) {
         router.refresh();
@@ -91,7 +99,8 @@ export function ActiveJobPanel({ job }: { job: CourierJob }) {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[11px] font-extrabold tracking-[0.06em] text-ink-faint">
-            GÖREV {config.step}/4 · {job.id.slice(0, 8).toUpperCase()}
+            GÖREV {config.step}/4 ·{" "}
+            {job.publicCode ?? job.id.slice(0, 8).toUpperCase()}
           </p>
           <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-ink">{config.title}</h2>
         </div>
@@ -146,11 +155,36 @@ export function ActiveJobPanel({ job }: { job: CourierJob }) {
       ) : null}
 
       <div className="pt-4">
+        <CourierLocationSharer
+          shipmentId={job.id}
+          active={["MATCHED", "PICKED_UP", "IN_TRANSIT"].includes(job.status)}
+        />
+      </div>
+
+      {config.event === "DELIVER" ? (
+        <div className="pt-4">
+          <label htmlFor="deliveryCode" className="text-sm font-bold text-ink">
+            Teslim kodu (alıcıdan al)
+          </label>
+          <TextInput
+            id="deliveryCode"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="6 haneli kod"
+            value={deliveryCode}
+            onChange={(e) => setDeliveryCode(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+      ) : null}
+
+      <div className="pt-4">
         <Button
           variant={config.event === "DELIVER" ? "success" : "dark"}
           size="lg"
           className="w-full"
           loading={pending}
+          disabled={config.event === "DELIVER" && deliveryCode.replace(/\D/g, "").length < 6}
           onClick={() => setConfirming("progress")}
         >
           {config.actionLabel}
@@ -160,7 +194,11 @@ export function ActiveJobPanel({ job }: { job: CourierJob }) {
       <ConfirmDialog
         open={confirming === "progress"}
         title={config.confirmTitle}
-        description={config.confirmDescription}
+        description={
+          config.event === "DELIVER"
+            ? "Alıcıdaki 6 haneli teslim kodunu girdiğinden emin ol. Bu işlem geri alınamaz."
+            : config.confirmDescription
+        }
         confirmLabel={config.actionLabel}
         tone={config.event === "DELIVER" ? "success" : "primary"}
         loading={pending}

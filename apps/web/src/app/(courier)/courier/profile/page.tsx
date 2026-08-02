@@ -4,6 +4,7 @@ import { AppRole } from "@yolla/db";
 import { getSession, hasRole } from "@/lib/auth";
 import { queryMyCourierProfile } from "@/features/couriers/queries";
 import { LogoutButton } from "@/features/auth/components/LogoutButton";
+import { ModeSwitchLink } from "@/features/auth/components/ModeSwitchLink";
 import { Button } from "@/components/ui/Button";
 import { ToneBadge } from "@/components/ui/StatusBadge";
 import { ChevronRightIcon, HomeIcon, TruckIcon } from "@/components/ui/icons";
@@ -87,15 +88,12 @@ export default async function CourierProfilePage() {
       <nav className="pt-5" aria-label="Hesap">
         <ul>
           <li className="border-b border-line">
-            <Link href="/sender" className="flex min-h-16 items-center gap-3.5 py-2">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-[16px] bg-fill text-ink-secondary">
-                <HomeIcon size={20} />
-              </span>
-              <span className="flex-1 text-[15px] font-extrabold text-ink">
-                Gönderici moduna geç
-              </span>
-              <ChevronRightIcon size={18} className="text-ink-faint" />
-            </Link>
+            <ModeSwitchLink
+              mode="sender"
+              icon={<HomeIcon size={20} />}
+              title="Gönderici moduna geç"
+              detail="Paket gönder ve takip et"
+            />
           </li>
           <li>
             <Link href="/courier/apply" className="flex min-h-16 items-center gap-3.5 py-2">

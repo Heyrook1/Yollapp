@@ -1,25 +1,32 @@
-import { MapCanvas } from "@/components/ui/MapCanvas";
-import { Button } from "@/components/ui/Button";
+import { Suspense } from "react";
+import { InteractiveMapPicker } from "@/features/maps/components/InteractiveMapPicker";
+import { isBrowserMapsConfigured } from "@/lib/maps/load-google-maps";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 
 export default function SenderMapPage() {
+  const configured = isBrowserMapsConfigured();
+
+  if (!configured) {
+    return (
+      <main className="mx-auto max-w-lg px-6 pb-32 pt-[max(3.5rem,env(safe-area-inset-top))]">
+        <h1 className="text-[30px] font-extrabold tracking-[-0.03em] text-ink">Harita</h1>
+        <p className="mt-2 text-sm font-semibold text-ink-secondary">
+          Tarayıcı harita anahtarı yok. NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY ekleyin.
+        </p>
+        <p className="mt-5 rounded-2xl bg-warning-soft px-4 py-3 text-sm font-bold text-warning-deep">
+          `.env.local` anahtarını ekleyip `pnpm dev` yeniden başlat.
+        </p>
+      </main>
+    );
+  }
+
+  // Full-bleed immersive map — padding/title yok (Uber / Bolt yüzey)
   return (
-    <main className="relative mx-auto flex min-h-screen max-w-lg flex-col">
-      <MapCanvas variant="idle" className="absolute inset-0" />
-      <div className="relative mt-auto">
-        <div className="rounded-t-[32px] bg-surface-elevated px-6 pb-[max(7rem,env(safe-area-inset-bottom))] pt-3 shadow-sheet">
-          <span className="mx-auto mb-4 block h-1.5 w-11 rounded-full bg-border" aria-hidden />
-          <div className="space-y-3">
-            <h1 className="text-[24px] font-extrabold tracking-[-0.025em] text-ink">Harita</h1>
-            <p className="text-sm font-semibold text-ink-secondary">
-              Canlı harita, harita sağlayıcısı bağlandığında burada olacak. Şimdilik
-              gönderilerini liste üzerinden takip edebilirsin.
-            </p>
-            <Button href="/sender/shipments" variant="dark" className="w-full">
-              Gönderilerime git
-            </Button>
-          </div>
-        </div>
-      </div>
+    <main className="relative -mx-0 min-h-[100dvh] max-w-none overflow-hidden bg-fill">
+      <h1 className="sr-only">Harita — alım ve teslimat noktası seç</h1>
+      <Suspense fallback={<ListSkeleton rows={4} />}>
+        <InteractiveMapPicker />
+      </Suspense>
     </main>
   );
 }

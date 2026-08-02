@@ -31,7 +31,7 @@ zorlanan kapalı özellik bayrağı mevcut.
 | Kurye başvuru + onay | ✅ READY |
 | İş kabul (eşzamanlılık) | ✅ READY — yarış koşulu kapatıldı, testli |
 | Teslimat durum makinesi | ✅ READY — geçişler korumalı, loglu |
-| Kazanç defteri | ✅ READY — append-only, DB trigger'lı |
+| Kazanç defteri | ✅ READY — append-only + DELIVER settle (`features/wallet`); UI available = SUM |
 | Para çekme | ⛔ BLOCKED — sağlayıcı yok, bayrak kapalı |
 | Takip linki | ✅ READY (konum hariç) |
 | Canlı harita | ⛔ BLOCKED |

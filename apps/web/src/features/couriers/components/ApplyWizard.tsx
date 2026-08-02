@@ -16,13 +16,14 @@ import {
   TruckIcon,
 } from "@/components/ui/icons";
 
-type VehicleType = "WALK" | "BIKE" | "MOTORCYCLE" | "CAR";
+type VehicleType = "WALK" | "BIKE" | "MOTORCYCLE" | "CAR" | "TAXI";
 
 const vehicles: { value: VehicleType; label: string; hint: string; icon: React.ReactNode }[] = [
   { value: "WALK", label: "Yaya", hint: "Merkezde kısa mesafeler", icon: <FootprintsIcon size={26} /> },
   { value: "BIKE", label: "Bisiklet", hint: "Küçük ve hafif paketler", icon: <BikeIcon size={26} /> },
   { value: "MOTORCYCLE", label: "Motosiklet", hint: "En hızlı eşleşme", icon: <TruckIcon size={26} /> },
   { value: "CAR", label: "Otomobil", hint: "Büyük ve hacimli paketler", icon: <CarIcon size={26} /> },
+  { value: "TAXI", label: "Taksi ile Gönder", hint: "Taksi kargo / şehirler arası", icon: <CarIcon size={26} /> },
 ];
 
 type Step = 1 | 2 | 3;

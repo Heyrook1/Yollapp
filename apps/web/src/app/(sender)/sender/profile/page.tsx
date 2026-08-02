@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppRole } from "@yolla/db";
 import { getSession, hasRole } from "@/lib/auth";
 import { LogoutButton } from "@/features/auth/components/LogoutButton";
+import { ModeSwitchLink } from "@/features/auth/components/ModeSwitchLink";
 import { Button } from "@/components/ui/Button";
 import { ToneBadge } from "@/components/ui/StatusBadge";
 import {
@@ -50,12 +51,23 @@ export default async function SenderProfilePage() {
 
       <nav className="pt-6" aria-label="Hesap">
         <ul>
-          <ProfileLink
-            href="/courier/apply"
-            icon={<TruckIcon size={20} />}
-            title={isCourier ? "Kurye moduna geç" : "Kurye ol — teslimatla kazan"}
-            detail={isCourier ? "Onaylı kurye hesabın hazır" : "Başvur, onaydan sonra iş almaya başla"}
-          />
+          {isCourier ? (
+            <li className="border-b border-line">
+              <ModeSwitchLink
+                mode="courier"
+                icon={<TruckIcon size={20} />}
+                title="Kurye moduna geç"
+                detail="İş listesi ve kazançlarına geç"
+              />
+            </li>
+          ) : (
+            <ProfileLink
+              href="/courier/apply"
+              icon={<TruckIcon size={20} />}
+              title="Kurye ol — teslimatla kazan"
+              detail="Başvur, onaydan sonra iş almaya başla"
+            />
+          )}
           <ProfileLink
             href="/business"
             icon={<BriefcaseIcon size={20} />}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChartIcon,
+  MapPinIcon,
   PackageIcon,
   ShieldIcon,
   UsersIcon,
@@ -19,6 +20,7 @@ type NavItem = {
 
 const items: NavItem[] = [
   { href: "/admin", label: "Operasyon", icon: ChartIcon, match: "exact" },
+  { href: "/admin/map", label: "Canlı harita", icon: MapPinIcon, match: "exact" },
   { href: "/admin/shipments", label: "Gönderiler", icon: PackageIcon, match: "prefix" },
   { href: "/admin/couriers", label: "Kurye onayları", icon: UsersIcon, match: "prefix" },
 ];

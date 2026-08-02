@@ -1,7 +1,13 @@
-import { formatTry, multiplyMinor, type ShipmentStatus as DbShipmentStatusName } from "@yolla/core";
+import {
+  formatTry,
+  multiplyMinor,
+  splitDeliveryEarning,
+  type ShipmentStatus as DbShipmentStatusName,
+} from "@yolla/core";
 import { AppRole, prisma } from "@yolla/db";
 import { requireAuth } from "@/lib/auth";
 import { assertRole } from "@/lib/authorization";
+import { listCourierLedgerEntries } from "@/features/wallet/service";
 import {
   listAvailableJobs,
   listCourierJobs,
@@ -29,17 +35,27 @@ async function enrichShipments(shipments: ShipmentRecord[]) {
   }
 
   const ids = shipments.map((s) => s.id);
-  const [quotes, zones, sizes, windows] = await Promise.all([
+  const [quotes, zones, sizes, windows, meta] = await Promise.all([
     prisma.priceQuote.findMany({ where: { shipmentId: { in: ids } } }),
     prisma.zone.findMany(),
     prisma.sizeClass.findMany(),
     prisma.deliveryWindow.findMany({ where: { shipmentId: { in: ids } } }),
+    prisma.shipment.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        publicCode: true,
+        itemDescription: true,
+        itemColor: true,
+      },
+    }),
   ]);
 
   const quoteByShipment = new Map(quotes.map((q) => [q.shipmentId, q]));
   const zoneById = new Map(zones.map((z) => [z.id, z]));
   const sizeById = new Map(sizes.map((s) => [s.id, s]));
   const windowByShipment = new Map(windows.map((w) => [w.shipmentId, w]));
+  const metaById = new Map(meta.map((m) => [m.id, m]));
 
   const fmt = new Intl.DateTimeFormat("tr-TR", {
     timeZone: "Europe/Nicosia",
@@ -50,11 +66,15 @@ async function enrichShipments(shipments: ShipmentRecord[]) {
   return shipments.map((s) => {
     const quote = quoteByShipment.get(s.id);
     const window = windowByShipment.get(s.id);
+    const m = metaById.get(s.id);
     const netMinor = quote
       ? quote.amountMinor - multiplyMinor(quote.amountMinor, quote.commissionBps / 10_000)
       : null;
     return {
       ...s,
+      publicCode: m?.publicCode ?? s.publicCode ?? null,
+      itemDescription: m?.itemDescription ?? s.itemDescription ?? null,
+      itemColor: m?.itemColor ?? s.itemColor ?? null,
       amountLabel: quote ? formatTry(quote.amountMinor) : null,
       // Kurye net kazancı = brüt − kaynakta kesilen komisyon
       netAmountLabel: netMinor !== null ? formatTry(netMinor) : null,
@@ -130,6 +150,12 @@ export async function queryShipmentDetail(
       zone: true,
       sizeClass: true,
       events: { orderBy: { createdAt: "asc" } },
+      rating: { select: { id: true } },
+      courier: {
+        include: {
+          courierProfile: { select: { displayName: true } },
+        },
+      },
     },
   });
   if (!shipment) {
@@ -146,6 +172,7 @@ export async function queryShipmentDetail(
 
   return {
     id: shipment.id,
+    publicCode: shipment.publicCode,
     status: shipment.status,
     isExpress: shipment.isExpress,
     pickupAddress: shipment.pickupAddress,
@@ -153,6 +180,10 @@ export async function queryShipmentDetail(
     recipientName: shipment.recipientName,
     recipientPhone: shipment.recipientPhone,
     notes: shipment.notes,
+    itemDescription: shipment.itemDescription,
+    itemColor: shipment.itemColor,
+    hasRating: Boolean(shipment.rating),
+    courierDisplayName: shipment.courier?.courierProfile?.displayName ?? null,
     zoneName: shipment.zone.name,
     sizeName: shipment.sizeClass.name,
     createdAt: shipment.createdAt,
@@ -184,12 +215,10 @@ export async function queryShipmentDetail(
 
 export type ShipmentDetail = NonNullable<Awaited<ReturnType<typeof queryShipmentDetail>>>;
 
-function commissionOf(amountMinor: number, commissionBps: number): number {
-  // Yuvarlama tek yerde: packages/core/money.ts
-  return multiplyMinor(amountMinor, commissionBps / 10_000);
-}
-
-/** Kurye kazançları — DELIVERED gönderilerin quote'larından gerçek veriyle türetilir. */
+/**
+ * Kurye kazançları — çekilebilir bakiye defter SUM'ından (CLAUDE.md §5.2).
+ * Devam eden işler için tahmini pending hâlâ quote snapshot'tan (henüz deftere yazılmadı).
+ */
 export async function queryCourierWallet(courierUserId?: string) {
   let userId = courierUserId;
   if (!userId) {
@@ -198,59 +227,58 @@ export async function queryCourierWallet(courierUserId?: string) {
     userId = session.dbUser.id;
   }
 
-  const jobs = await prisma.shipment.findMany({
-    where: { courierId: userId },
-    include: { priceQuote: true },
-    orderBy: { updatedAt: "desc" },
-  });
+  const [ledgerView, jobs, config] = await Promise.all([
+    listCourierLedgerEntries(userId),
+    prisma.shipment.findMany({
+      where: { courierId: userId },
+      include: { priceQuote: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.platformConfig.findUnique({ where: { id: "default" } }),
+  ]);
 
-  const config = await prisma.platformConfig.findUnique({ where: { id: "default" } });
   const commissionBps = config?.commissionBps ?? 1500;
+  const { balances } = ledgerView;
 
-  let availableMinor = 0;
-  let pendingMinor = 0;
-  const entries: {
-    id: string;
-    title: string;
-    detail: string;
-    amountMinor: number;
-    amountLabel: string;
-    positive: boolean;
-    settled: boolean;
-  }[] = [];
-
+  // Deftere henüz düşmemiş aktif işler — yalnızca tahmini pending (AVAILABLE değil).
+  let estimatedPendingMinor = 0;
   for (const job of jobs) {
     if (!job.priceQuote) continue;
-    const gross = job.priceQuote.amountMinor;
-    const commission = commissionOf(gross, job.priceQuote.commissionBps);
-    const net = gross - commission;
-    const active = ["MATCHED", "PICKED_UP", "IN_TRANSIT"].includes(job.status);
-    if (job.status === "DELIVERED") {
-      availableMinor += net;
-    } else if (active) {
-      pendingMinor += net;
-    } else {
-      continue;
-    }
-    entries.push({
-      id: job.id,
-      title: `Teslimat · ${job.id.slice(0, 8).toUpperCase()}`,
-      detail: `${nicosiaDateTime.format(job.updatedAt)} · brüt ${formatTry(gross)} − komisyon ${formatTry(commission)}`,
-      amountMinor: net,
-      amountLabel: formatTry(net),
-      positive: true,
-      settled: job.status === "DELIVERED",
-    });
+    if (!["MATCHED", "PICKED_UP", "IN_TRANSIT"].includes(job.status)) continue;
+    const split = splitDeliveryEarning(
+      job.priceQuote.amountMinor,
+      job.priceQuote.commissionBps,
+    );
+    estimatedPendingMinor += split.netMinor;
   }
 
+  const pendingMinor = balances.pendingMinor + estimatedPendingMinor;
+
+  const entries = ledgerView.entries.map((e) => {
+    const positive = e.amountMinor > 0;
+    return {
+      id: e.id,
+      title:
+        e.type === "PLATFORM_COMMISSION"
+          ? "Platform komisyonu"
+          : e.description ?? `Defter · ${e.type}`,
+      detail: `${nicosiaDateTime.format(e.createdAt)} · ${e.status}`,
+      amountMinor: e.amountMinor,
+      amountLabel: formatTry(Math.abs(e.amountMinor)),
+      positive,
+      settled: e.status === "AVAILABLE" || e.status === "PAID",
+    };
+  });
+
   return {
-    availableMinor,
-    availableLabel: formatTry(availableMinor),
+    availableMinor: balances.availableMinor,
+    availableLabel: formatTry(balances.availableMinor),
     pendingMinor,
     pendingLabel: formatTry(pendingMinor),
     commissionBps,
     commissionPctLabel: `%${(commissionBps / 100).toLocaleString("tr-TR")}`,
     deliveredCount: jobs.filter((j) => j.status === "DELIVERED").length,
+    totalCommissionLabel: formatTry(balances.totalCommissionMinor),
     entries,
   };
 }
@@ -258,10 +286,14 @@ export async function queryCourierWallet(courierUserId?: string) {
 /** Gönderici ödeme geçmişi — ödenmiş quote'lardan gerçek veriyle. */
 export async function querySenderWallet() {
   const session = await requireAuth();
+  return querySenderWalletFor(session.dbUser.id);
+}
 
+/** Aynı sorgu, görüntüleyen açıkça verilir (Bearer token akışı için). */
+export async function querySenderWalletFor(senderId: string) {
   const shipments = await prisma.shipment.findMany({
     where: {
-      senderId: session.dbUser.id,
+      senderId,
       status: { notIn: ["DRAFT", "QUOTED", "CANCELLED"] },
     },
     include: { priceQuote: true },

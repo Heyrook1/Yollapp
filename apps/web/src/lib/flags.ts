@@ -15,7 +15,12 @@ export type FeatureFlagId =
   | "payouts"
   | "notifications"
   | "business_bulk_import"
-  | "phone_auth";
+  | "phone_auth"
+  | "maps"
+  | "live_tracking"
+  | "courier_presence"
+  | "delivery_proof"
+  | "ratings";
 
 const flagMessages: Record<FeatureFlagId, string> = {
   shipment_creation: "Gönderi oluşturma şu anda geçici olarak kapalı.",
@@ -25,6 +30,11 @@ const flagMessages: Record<FeatureFlagId, string> = {
   notifications: "Bildirim gönderimi şu anda kapalı.",
   business_bulk_import: "Toplu gönderi içe aktarma henüz kullanıma açılmadı.",
   phone_auth: "Telefon ile giriş henüz kullanıma açılmadı.",
+  maps: "Harita ve adres arama şu anda kapalı.",
+  live_tracking: "Canlı konum takibi şu anda kapalı.",
+  courier_presence: "Canlı kurye haritası şu anda kapalı.",
+  delivery_proof: "Teslim doğrulama şu anda kapalı.",
+  ratings: "Değerlendirme şu anda kapalı.",
 };
 
 /**

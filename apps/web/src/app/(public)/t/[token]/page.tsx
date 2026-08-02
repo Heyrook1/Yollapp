@@ -6,6 +6,7 @@ import { Timeline, type TimelineItem } from "@/components/ui/Timeline";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { MapPinIcon, PackageIcon } from "@/components/ui/icons";
+import { PublicLiveMap } from "@/features/maps/components/PublicLiveMap";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +117,43 @@ export default async function TrackingPage({
           </div>
         </div>
 
+        <PublicLiveMap
+          pickup={view.pickup}
+          dropoff={view.dropoff}
+          live={view.live}
+          routePolyline={view.routePolyline}
+          liveLocationAvailable={view.liveLocationAvailable}
+        />
+
+        <div className="grid grid-cols-2 gap-2">
+          {view.sizeLabel ? (
+            <div className="rounded-2xl bg-fill-soft px-3 py-3">
+              <p className="text-[10px] font-extrabold tracking-wide text-ink-faint">BOYUT</p>
+              <p className="text-sm font-extrabold text-ink">{view.sizeLabel}</p>
+            </div>
+          ) : null}
+          {view.itemDescription ? (
+            <div className="rounded-2xl bg-fill-soft px-3 py-3">
+              <p className="text-[10px] font-extrabold tracking-wide text-ink-faint">MAL</p>
+              <p className="truncate text-sm font-extrabold text-ink">
+                {view.itemDescription}
+                {view.itemColor ? ` · ${view.itemColor}` : ""}
+              </p>
+            </div>
+          ) : null}
+          {view.courierDisplayName ? (
+            <div className="col-span-2 rounded-2xl bg-fill-soft px-3 py-3">
+              <p className="text-[10px] font-extrabold tracking-wide text-ink-faint">KURYE</p>
+              <p className="text-sm font-extrabold text-ink">
+                {view.courierDisplayName}
+                {view.courierRatingAvg != null
+                  ? ` · ★ ${view.courierRatingAvg.toFixed(1)}`
+                  : ""}
+              </p>
+            </div>
+          ) : null}
+        </div>
+
         {view.windowLabel ? (
           <div className="rounded-2xl bg-fill-soft px-4 py-3">
             <p className="text-xs font-bold text-ink-secondary">Teslimat penceresi</p>
@@ -123,14 +161,14 @@ export default async function TrackingPage({
           </div>
         ) : null}
 
-        {/* Canlı konum sağlayıcısı yok — statik veriyi "canlı" diye sunmuyoruz. */}
-        <div className="flex items-start gap-3 rounded-2xl bg-info-soft px-4 py-3">
-          <MapPinIcon size={18} className="mt-0.5 shrink-0 text-info" />
-          <p className="text-sm font-semibold text-ink-secondary">
-            Canlı harita takibi henüz aktif değil. Durum güncellemeleri kurye adımlarına
-            göre aşağıda görünür.
-          </p>
-        </div>
+        {!view.liveLocationAvailable ? (
+          <div className="flex items-start gap-3 rounded-2xl bg-info-soft px-4 py-3">
+            <MapPinIcon size={18} className="mt-0.5 shrink-0 text-info" />
+            <p className="text-sm font-semibold text-ink-secondary">
+              Canlı konum bu aşamada henüz paylaşılmıyor. Durum geçmişi aşağıda.
+            </p>
+          </div>
+        ) : null}
 
         <div className="border-t border-line pt-4">
           <h2 className="pb-3 text-[13px] font-extrabold tracking-[0.06em] text-ink-faint">

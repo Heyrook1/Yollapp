@@ -131,6 +131,7 @@ export async function createShipmentAction(rawInput: unknown): Promise<ActionRes
 export async function markPaidAction(rawInput: unknown): Promise<ActionResult> {
   try {
     const session = await requireAuth();
+    await assertFeatureEnabled("payments");
     const input = markPaidSchema.parse(rawInput);
     const result = await markShipmentPaid({
       senderId: session.dbUser.id,
@@ -179,6 +180,7 @@ export async function courierProgressAction(rawInput: unknown): Promise<ActionRe
       courierId: session.dbUser.id,
       shipmentId: input.shipmentId,
       event: input.event,
+      deliveryCode: input.deliveryCode,
     });
     if (!result.ok) {
       return { ok: false, message: toUserMessage(result.error) };

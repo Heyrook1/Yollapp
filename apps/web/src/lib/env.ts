@@ -20,8 +20,15 @@ const serverSchema = z.object({
   PAYMENTS_WEBHOOK_SECRET: z.string().min(16).optional(),
   SMS_PROVIDER: z.enum(["none", "log"]).default("none"),
   SMS_API_KEY: z.string().min(8).optional(),
-  MAPS_PROVIDER: z.enum(["none", "placeholder"]).default("none"),
+  MAPS_PROVIDER: z.enum(["none", "placeholder", "google"]).default("none"),
   MAPS_API_KEY: z.string().min(8).optional(),
+  GOOGLE_MAPS_SERVER_KEY: z.string().min(8).optional(),
+  NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: z.string().min(8).optional(),
+  GOOGLE_MAPS_MAP_ID: z.string().optional(),
+  GOOGLE_MAPS_ROUTES_ENABLED: z.enum(["true", "false"]).default("true"),
+  GOOGLE_MAPS_PLACES_ENABLED: z.enum(["true", "false"]).default("true"),
+  GOOGLE_MAPS_DEFAULT_LAT: z.coerce.number().optional(),
+  GOOGLE_MAPS_DEFAULT_LNG: z.coerce.number().optional(),
   SENTRY_DSN: z.string().url().optional(),
 });
 
@@ -64,6 +71,16 @@ export function validateEnv(raw: NodeJS.ProcessEnv = process.env): EnvValidation
   }
   if (isProd && !env.SENTRY_DSN) {
     warnings.push("SENTRY_DSN yok — production hata izleme devre dışı.");
+  }
+  if (env.MAPS_PROVIDER === "google" && !env.GOOGLE_MAPS_SERVER_KEY) {
+    warnings.push(
+      "MAPS_PROVIDER=google ama GOOGLE_MAPS_SERVER_KEY yok — rota/adres sunucu çağrıları kapalı.",
+    );
+  }
+  if (env.MAPS_PROVIDER === "google" && !env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY) {
+    warnings.push(
+      "NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY yok — harita UI placeholder'a düşer.",
+    );
   }
 
   if (errors.length > 0) {

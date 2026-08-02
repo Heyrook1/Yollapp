@@ -34,5 +34,6 @@ export const messages = {
     BIKE: "Bisiklet",
     MOTORCYCLE: "Motosiklet",
     CAR: "Araba",
+    TAXI: "Taksi ile Gönder",
   } as const,
 } as const;

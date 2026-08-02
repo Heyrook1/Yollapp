@@ -11,6 +11,7 @@ import { BriefcaseIcon } from "@/components/ui/icons";
 
 export type JobOffer = {
   id: string;
+  publicCode?: string | null;
   pickupAddress: string;
   dropoffAddress: string;
   sizeName: string;
@@ -20,6 +21,7 @@ export type JobOffer = {
   amountLabel: string | null;
   netAmountLabel: string | null;
   commissionLabel: string | null;
+  itemDescription?: string | null;
 };
 
 export function JobOfferList({ jobs }: { jobs: JobOffer[] }) {
@@ -34,8 +36,8 @@ export function JobOfferList({ jobs }: { jobs: JobOffer[] }) {
     return (
       <EmptyState
         icon={<BriefcaseIcon size={26} />}
-        title="Şu an açık iş yok"
-        description="Yeni teslimatlar geldiğinde burada görünecek. Kısa aralıklarla kontrol et."
+        title="Şu an gönderim talebi yok"
+        description="Ödenmiş yeni talepler burada listelenir. Çevrimiçi kal, kısa aralıklarla kontrol et."
       />
     );
   }
@@ -51,16 +53,19 @@ export function JobOfferList({ jobs }: { jobs: JobOffer[] }) {
       <ul className="space-y-4">
         {jobs.map((job) => (
           <li key={job.id} className="rounded-[24px] bg-fill-soft p-5">
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline justify-between gap-2">
               <span className="tnum text-[28px] font-extrabold tracking-[-0.03em] text-ink">
                 {job.netAmountLabel ?? job.amountLabel ?? "—"}
               </span>
-              {job.commissionLabel ? (
-                <span className="text-xs font-bold text-ink-faint">
-                  brüt {job.amountLabel} − komisyon {job.commissionLabel}
-                </span>
-              ) : null}
+              <span className="text-[11px] font-extrabold tracking-wide text-ink-faint">
+                {job.publicCode ?? job.id.slice(0, 8).toUpperCase()}
+              </span>
             </div>
+            {job.commissionLabel ? (
+              <p className="pt-1 text-xs font-bold text-ink-faint">
+                brüt {job.amountLabel} − komisyon {job.commissionLabel}
+              </p>
+            ) : null}
 
             <div className="flex flex-col gap-1.5 pt-3 text-[13px] font-bold text-ink">
               <span className="flex items-center gap-2.5">
@@ -74,6 +79,11 @@ export function JobOfferList({ jobs }: { jobs: JobOffer[] }) {
                 </span>
               </span>
             </div>
+            {job.itemDescription ? (
+              <p className="pt-2 text-xs font-semibold text-ink-secondary">
+                Mal: {job.itemDescription}
+              </p>
+            ) : null}
 
             <div className="flex flex-wrap gap-2 pt-3">
               <Chip className="min-h-9 px-3 text-xs">{job.sizeName}</Chip>

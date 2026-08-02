@@ -7,6 +7,7 @@ import { queryShipmentDetail, type ShipmentDetail } from "@/features/shipments/q
 import { PayButton } from "@/features/shipments/components/PayButton";
 import { CancelShipmentButton } from "@/features/shipments/components/CancelShipmentButton";
 import { ShareTrackingButton } from "@/features/tracking/components/ShareTrackingButton";
+import { RateCourierSheet } from "@/features/ratings/components/RateCourierSheet";
 import { Button } from "@/components/ui/Button";
 import { MapCanvas } from "@/components/ui/MapCanvas";
 import { SegmentedProgress } from "@/components/ui/SegmentedProgress";
@@ -89,7 +90,7 @@ export default async function ShipmentDetailPage({
     notFound();
   }
 
-  const code = detail.id.slice(0, 8).toUpperCase();
+  const code = detail.publicCode ?? detail.id.slice(0, 8).toUpperCase();
   const live = ["MATCHED", "PICKED_UP", "IN_TRANSIT"].includes(detail.status);
   const routeProgress =
     detail.status === "MATCHED" ? 0.15 : detail.status === "PICKED_UP" ? 0.4 : 0.7;
@@ -256,9 +257,18 @@ export default async function ShipmentDetailPage({
           <div className="border-t border-line pt-4">
             <Timeline items={buildTimeline(detail)} />
           </div>
-          <p className="rounded-2xl bg-fill-soft px-4 py-3 text-sm font-semibold text-ink-secondary">
-            Kurye değerlendirme ve bahşiş yakında — teslimat kaydın güvende.
-          </p>
+          {detail.viewer === "sender" && !detail.hasRating ? (
+            <RateCourierSheet
+              shipmentId={detail.id}
+              courierLabel={detail.courierDisplayName}
+            />
+          ) : (
+            <p className="rounded-2xl bg-fill-soft px-4 py-3 text-sm font-semibold text-ink-secondary">
+              {detail.hasRating
+                ? "Değerlendirmen kaydedildi — teşekkürler."
+                : "Teslimat kaydın güvende."}
+            </p>
+          )}
         </div>
       </main>
     );

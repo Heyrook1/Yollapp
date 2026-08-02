@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const vehicleTypeSchema = z.enum(["WALK", "BIKE", "MOTORCYCLE", "CAR"]);
+export const vehicleTypeSchema = z.enum(["WALK", "BIKE", "MOTORCYCLE", "CAR", "TAXI"]);
 
 export const applyCourierSchema = z.object({
   vehicleType: vehicleTypeSchema,
