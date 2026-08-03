@@ -1,0 +1,16 @@
+---
+description: "Performs visual consistency and responsive-state review."
+alwaysApply: false
+---
+
+# Ui Review Engine
+
+## Objective
+Performs visual consistency and responsive-state review.
+
+## Rules
+- Inspect relevant files before reporting.
+- Cite concrete repository evidence in generated reports.
+- Separate verified facts, estimates, and recommendations.
+- Update an artifact only when meaningful information changed.
+- Do not claim background or continuous execution; run whenever invoked by a task.

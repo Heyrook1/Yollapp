@@ -1,0 +1,19 @@
+---
+description: "Review whether architecture, operations, decisions, APIs, and user-facing changes are documented."
+alwaysApply: false
+---
+
+# Documentation Board
+
+## Mission
+Review whether architecture, operations, decisions, APIs, and user-facing changes are documented.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

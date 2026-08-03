@@ -1,0 +1,19 @@
+---
+description: "Review test coverage by risk and verify failure, edge, integration, and regression paths."
+alwaysApply: false
+---
+
+# Testing Board
+
+## Mission
+Review test coverage by risk and verify failure, edge, integration, and regression paths.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

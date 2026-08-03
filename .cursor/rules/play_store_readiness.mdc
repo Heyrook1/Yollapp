@@ -1,0 +1,16 @@
+---
+description: "Evaluates Android packaging, permissions, assets, metadata, and policy readiness."
+alwaysApply: false
+---
+
+# Play Store Readiness
+
+## Objective
+Evaluates Android packaging, permissions, assets, metadata, and policy readiness.
+
+## Rules
+- Inspect relevant files before reporting.
+- Cite concrete repository evidence in generated reports.
+- Separate verified facts, estimates, and recommendations.
+- Update an artifact only when meaningful information changed.
+- Do not claim background or continuous execution; run whenever invoked by a task.

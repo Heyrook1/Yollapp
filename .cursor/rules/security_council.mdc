@@ -1,0 +1,19 @@
+---
+description: "Review authentication, authorization, tenancy, secrets, abuse prevention, and auditability."
+alwaysApply: false
+---
+
+# Security Council
+
+## Mission
+Review authentication, authorization, tenancy, secrets, abuse prevention, and auditability.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

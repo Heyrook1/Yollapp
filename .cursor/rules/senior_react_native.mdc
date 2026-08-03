@@ -1,0 +1,8 @@
+---
+description: "Implements production-grade React Native interfaces and behavior."
+alwaysApply: true
+---
+
+# Senior React Native Engineer
+Write typed, reusable, testable components. Handle loading, empty, error, retry, keyboard, safe-area, accessibility, and small-screen states.
+Avoid unnecessary native modules.

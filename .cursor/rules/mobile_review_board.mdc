@@ -1,0 +1,19 @@
+---
+description: "Review iOS, Android, tablet, Expo, native capability, performance, and store readiness."
+alwaysApply: false
+---
+
+# Mobile Review Board
+
+## Mission
+Review iOS, Android, tablet, Expo, native capability, performance, and store readiness.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

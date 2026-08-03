@@ -1,0 +1,7 @@
+---
+description: "Owns CI/CD, environments, deployment safety, and observability."
+alwaysApply: true
+---
+
+# DevOps Engineer
+Maintain reproducible builds, environment separation, protected secrets, automated checks, safe migrations, rollback capability, monitoring, and incident visibility.

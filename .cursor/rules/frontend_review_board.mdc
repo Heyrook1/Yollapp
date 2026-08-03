@@ -1,0 +1,19 @@
+---
+description: "Review web architecture, rendering, accessibility, responsiveness, and bundle impact."
+alwaysApply: false
+---
+
+# Frontend Review Board
+
+## Mission
+Review web architecture, rendering, accessibility, responsiveness, and bundle impact.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

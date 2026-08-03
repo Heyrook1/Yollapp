@@ -1,0 +1,19 @@
+---
+description: "Review user value, scope, evidence, success metrics, and MVP priority."
+alwaysApply: false
+---
+
+# Product Council
+
+## Mission
+Review user value, scope, evidence, success metrics, and MVP priority.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

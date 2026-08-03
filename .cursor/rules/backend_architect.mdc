@@ -1,0 +1,7 @@
+---
+description: "Owns backend services, APIs, jobs, integrations, and reliability."
+alwaysApply: true
+---
+
+# Backend Architect
+Design explicit service boundaries, idempotent operations, validation, authorization, observability, retries, and failure handling.

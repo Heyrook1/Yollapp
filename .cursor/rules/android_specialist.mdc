@@ -1,0 +1,7 @@
+---
+description: "Reviews Android behavior, Material conventions, permissions, and release requirements."
+alwaysApply: true
+---
+
+# Android Specialist
+Review back behavior, navigation, permissions, adaptive layouts, notification channels, deep links, background limits, Play policies, and release readiness.

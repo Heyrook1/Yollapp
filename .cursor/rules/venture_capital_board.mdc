@@ -1,0 +1,19 @@
+---
+description: "Review defensibility, traction evidence, scalability, risk, unit economics, and investment readiness."
+alwaysApply: false
+---
+
+# Venture Capital Board
+
+## Mission
+Review defensibility, traction evidence, scalability, risk, unit economics, and investment readiness.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

@@ -1,0 +1,19 @@
+---
+description: "Review visual hierarchy, interaction quality, responsiveness, states, and design-system consistency."
+alwaysApply: false
+---
+
+# Design Review Board
+
+## Mission
+Review visual hierarchy, interaction quality, responsiveness, states, and design-system consistency.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

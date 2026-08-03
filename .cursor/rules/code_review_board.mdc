@@ -1,0 +1,19 @@
+---
+description: "Review correctness, clarity, maintainability, duplication, testability, and standards compliance."
+alwaysApply: false
+---
+
+# Code Review Board
+
+## Mission
+Review correctness, clarity, maintainability, duplication, testability, and standards compliance.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.

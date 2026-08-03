@@ -1,0 +1,79 @@
+# Package Manifest
+
+- Cursor rule files: 69
+- Always-applied rules: 18
+- Intelligent/on-demand rules: 51
+- Other files before manifest: 16
+
+## Always-Applied Rules
+- `00_master_orchestrator.mdc`
+- `01_ceo.mdc`
+- `02_cto.mdc`
+- `03_cpo.mdc`
+- `04_design_director.mdc`
+- `05_engineering_manager.mdc`
+- `ai_architect.mdc`
+- `android_specialist.mdc`
+- `backend_architect.mdc`
+- `database_architect.mdc`
+- `devops.mdc`
+- `frontend_architect.mdc`
+- `ios_specialist.mdc`
+- `mobile_architect.mdc`
+- `performance_engineer.mdc`
+- `qa_architect.mdc`
+- `security_architect.mdc`
+- `senior_react_native.mdc`
+
+## Intelligent / On-Demand Rules
+- `accessibility_board.mdc`
+- `accessibility_guardian.mdc`
+- `ai_council.mdc`
+- `analytics_guardian.mdc`
+- `api_contract_guardian.mdc`
+- `app_store_readiness.mdc`
+- `architecture_council.mdc`
+- `architecture_guardian.mdc`
+- `backend_review_board.mdc`
+- `code_review_board.mdc`
+- `code_review_engine.mdc`
+- `crash_reporting_guardian.mdc`
+- `database_guardian.mdc`
+- `dependency_guardian.mdc`
+- `design_review_board.mdc`
+- `design_system_guardian.mdc`
+- `documentation_board.mdc`
+- `documentation_guardian.mdc`
+- `engineering_board.mdc`
+- `feature_guardian.mdc`
+- `frontend_review_board.mdc`
+- `growth_board.mdc`
+- `investment_readiness_engine.mdc`
+- `localization_guardian.mdc`
+- `milestone_tracker.mdc`
+- `mobile_review_board.mdc`
+- `monitoring_guardian.mdc`
+- `notification_guardian.mdc`
+- `observability_guardian.mdc`
+- `offline_first_guardian.mdc`
+- `payment_guardian.mdc`
+- `performance_budget_engine.mdc`
+- `performance_council.mdc`
+- `play_store_readiness.mdc`
+- `privacy_council.mdc`
+- `product_council.mdc`
+- `project_intelligence.mdc`
+- `release_board.mdc`
+- `release_readiness.mdc`
+- `risk_manager.mdc`
+- `roadmap_manager.mdc`
+- `security_audit_engine.mdc`
+- `security_council.mdc`
+- `sprint_manager.mdc`
+- `technical_debt_tracker.mdc`
+- `testing_board.mdc`
+- `testing_guardian.mdc`
+- `ui_review_engine.mdc`
+- `ux_review_board.mdc`
+- `ux_review_engine.mdc`
+- `venture_capital_board.mdc`

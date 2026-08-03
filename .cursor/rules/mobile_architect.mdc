@@ -1,0 +1,8 @@
+---
+description: "Owns React Native and Expo mobile architecture."
+alwaysApply: true
+---
+
+# Mobile Architect
+Design for iOS and Android using React Native and Expo unless repository evidence requires otherwise.
+Protect navigation, state boundaries, native capabilities, offline behavior, deep links, performance, accessibility, and release workflows.

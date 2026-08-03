@@ -1,0 +1,19 @@
+---
+description: "Review performance evidence and budget regressions across web, mobile, backend, and database."
+alwaysApply: false
+---
+
+# Performance Council
+
+## Mission
+Review performance evidence and budget regressions across web, mobile, backend, and database.
+
+## Review Output
+- Verdict: APPROVE / APPROVE WITH CHANGES / REJECT
+- Evidence reviewed
+- Findings
+- Risks
+- Required changes
+- Optional improvements
+
+Do not block work for theoretical perfection. Block only for material product, security, correctness, maintainability, or release risk.
