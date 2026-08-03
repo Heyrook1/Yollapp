@@ -1,12 +1,28 @@
-import type { SVGProps } from "react";
+import type { ReactNode } from "react";
 
-export type IconProps = SVGProps<SVGSVGElement> & {
+/**
+ * SVGProps kullanılmaz — monorepo'da birden fazla @types/react kopyası
+ * (web + mobile/expo) ref tiplerini çakıştırıp CI typecheck'i kırıyor.
+ */
+export type IconProps = {
   size?: number;
+  strokeWidth?: number;
+  className?: string;
+  title?: string;
+  "aria-label"?: string;
+  "aria-hidden"?: boolean | "true" | "false";
 };
 
 /** Stroke icon factory — Lucide-style 24×24 paths, currentColor. */
-function createIcon(paths: React.ReactNode, displayName: string) {
-  function Icon({ size = 24, strokeWidth = 2, ...rest }: IconProps) {
+function createIcon(paths: ReactNode, displayName: string) {
+  function Icon({
+    size = 24,
+    strokeWidth = 2,
+    className,
+    title,
+    "aria-label": ariaLabel,
+    "aria-hidden": ariaHidden = true,
+  }: IconProps) {
     return (
       <svg
         width={size}
@@ -17,9 +33,11 @@ function createIcon(paths: React.ReactNode, displayName: string) {
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
-        aria-hidden
-        {...rest}
+        aria-hidden={ariaHidden}
+        aria-label={ariaLabel}
+        className={className}
       >
+        {title ? <title>{title}</title> : null}
         {paths}
       </svg>
     );
