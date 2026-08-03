@@ -12,6 +12,7 @@
     "doctor": "npx expo-doctor"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.49.1",
     "@yolla/core": "workspace:*",
@@ -29,6 +30,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/node": "^22.13.10",
     "@types/react": "~19.1.0",
     "typescript": "^5.8.2"
   }
